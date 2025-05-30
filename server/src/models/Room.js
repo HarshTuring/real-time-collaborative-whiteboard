@@ -5,13 +5,13 @@ class Room {
         this.isPrivate = isPrivate;
         this.createdBy = createdBy;
         this.createdAt = new Date();
-        this.participants = new Set(); // Store active participants
+        this.participants = new Map(); // Changed to Map to store participant ID -> username
         this.canvasState = []; // Store the current canvas state
     }
 
-    // Add a participant to the room
-    addParticipant(participantId) {
-        this.participants.add(participantId);
+    // Add a participant to the room with username
+    addParticipant(participantId, username = 'Anonymous') {
+        this.participants.set(participantId, username);
         return this.getParticipantCount();
     }
 
@@ -19,6 +19,15 @@ class Room {
     removeParticipant(participantId) {
         this.participants.delete(participantId);
         return this.getParticipantCount();
+    }
+
+    // Update a participant's username
+    updateParticipantUsername(participantId, username) {
+        if (this.participants.has(participantId)) {
+            this.participants.set(participantId, username);
+            return true;
+        }
+        return false;
     }
 
     // Get number of participants
@@ -60,7 +69,11 @@ class Room {
         };
 
         if (includeParticipants) {
-            details.participants = Array.from(this.participants);
+            // Convert Map to array of objects with id and username
+            details.participants = Array.from(this.participants).map(([id, username]) => ({
+                id,
+                username
+            }));
         }
 
         return details;
