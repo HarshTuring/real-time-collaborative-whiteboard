@@ -7,37 +7,76 @@ function initializeSocketIO(io) {
         console.log('A user connected:', socket.id);
 
         // When a user creates or joins a room
-        socket.on('join-room', ({ roomId, userId }) => {
+        socket.on('join-room', ({ roomId, userId, username }) => {
             try {
                 // Check if room exists
                 let room = roomStore.getRoom(roomId);
 
                 // If room doesn't exist, create it (this is a fallback, normally rooms are created via API)
                 if (!room) {
-                    room = roomStore.createRoom(roomId, null, false, userId);
+                    room = roomStore.createRoom(roomId, null, false, userId || socket.id);
                     console.log(`Room ${roomId} created automatically by user ${userId || socket.id}`);
                 }
 
-                // Add user to the room
+                // Add user to the room with username
                 socket.join(roomId);
-                room.addParticipant(userId || socket.id);
+                const actualUserId = userId || socket.id;
+                room.addParticipant(actualUserId, username || 'Anonymous');
 
-                console.log(`User ${userId || socket.id} joined room ${roomId}`);
+                console.log(`User ${actualUserId} (${username || 'Anonymous'}) joined room ${roomId}`);
 
                 // Send existing canvas state to the new user
                 socket.emit('canvas-state', room.canvasState);
 
+                // Get participants with usernames
+                const participants = Array.from(room.participants).map(([id, name]) => ({
+                    id,
+                    username: name
+                }));
+
                 // Notify all users in the room about the new participant
                 io.to(roomId).emit('participant-joined', {
-                    userId: userId || socket.id,
-                    count: room.getParticipantCount()
+                    userId: actualUserId,
+                    username: username || 'Anonymous',
+                    count: room.getParticipantCount(),
+                    participants: participants
                 });
 
                 // Notify about room update
-                io.to(roomId).emit('room-updated', room.getDetails());
+                io.to(roomId).emit('room-updated', room.getDetails(true));
             } catch (error) {
                 console.error(`Error joining room: ${error.message}`);
                 socket.emit('error', { message: 'Failed to join room' });
+            }
+        });
+
+        // Handle username updates
+        socket.on('update-username', ({ roomId, username }) => {
+            try {
+                const room = roomStore.getRoom(roomId);
+
+                if (room && room.participants.has(socket.id)) {
+                    // Update the username
+                    room.updateParticipantUsername(socket.id, username);
+
+                    // Get updated participants list
+                    const participants = Array.from(room.participants).map(([id, name]) => ({
+                        id,
+                        username: name
+                    }));
+
+                    // Notify all users in the room
+                    io.to(roomId).emit('username-updated', {
+                        userId: socket.id,
+                        username,
+                        participants
+                    });
+
+                    console.log(`User ${socket.id} updated username to ${username} in room ${roomId}`);
+                }
+            } catch (error) {
+                console.error(`Error updating username: ${error.message}`);
+                socket.emit('error', { message: 'Failed to update username' });
             }
         });
 
@@ -55,6 +94,27 @@ function initializeSocketIO(io) {
                 }
             } catch (error) {
                 console.error(`Error in draw-line: ${error.message}`);
+            }
+        });
+
+        // When a user sends cursor position, include username
+        socket.on('cursor-position', ({ roomId, position }) => {
+            try {
+                const room = roomStore.getRoom(roomId);
+
+                if (room) {
+                    // Get the username
+                    const username = room.participants.get(socket.id) || 'Anonymous';
+
+                    // Broadcast cursor position with username
+                    socket.to(roomId).emit('cursor-position', {
+                        userId: socket.id,
+                        position,
+                        cursorUsername: username
+                    });
+                }
+            } catch (error) {
+                console.error(`Error sending cursor position: ${error.message}`);
             }
         });
 
@@ -84,7 +144,7 @@ function initializeSocketIO(io) {
 
                 if (room && name) {
                     room.updateName(name);
-                    io.to(roomId).emit('room-updated', room.getDetails());
+                    io.to(roomId).emit('room-updated', room.getDetails(true));
                 }
             } catch (error) {
                 console.error(`Error updating room name: ${error.message}`);
@@ -98,7 +158,7 @@ function initializeSocketIO(io) {
 
                 if (room) {
                     room.toggleVisibility();
-                    io.to(roomId).emit('room-updated', room.getDetails());
+                    io.to(roomId).emit('room-updated', room.getDetails(true));
                 }
             } catch (error) {
                 console.error(`Error toggling room visibility: ${error.message}`);
@@ -110,7 +170,6 @@ function initializeSocketIO(io) {
             console.log('A user disconnected:', socket.id);
 
             // Check all rooms to see if this user is a participant
-            // In a real application with authentication, you'd use a userId instead
             roomStore.rooms.forEach((room, roomId) => {
                 if (room.participants.has(socket.id)) {
                     handleUserLeavingRoom(socket, roomId, socket.id);
@@ -127,12 +186,19 @@ function initializeSocketIO(io) {
                     const count = room.removeParticipant(userId);
                     socket.leave(roomId);
 
+                    // Get updated participants list
+                    const participants = Array.from(room.participants).map(([id, name]) => ({
+                        id,
+                        username: name
+                    }));
+
                     console.log(`User ${userId} left room ${roomId}`);
 
                     // Notify remaining users
                     io.to(roomId).emit('participant-left', {
                         userId,
-                        count
+                        count,
+                        participants
                     });
 
                     // If room is empty, consider removing it (optional, based on your requirements)
