@@ -5,13 +5,14 @@ class Room {
         this.isPrivate = isPrivate;
         this.createdBy = createdBy;
         this.createdAt = new Date();
-        this.participants = new Set(); // Store active participants
+        this.participants = new Map(); // Changed to Map to store participant ID -> username
         this.canvasState = []; // Store the current canvas state
+        this.drawingUsers = new Map(); // Store users who are currently drawing
     }
 
-    // Add a participant to the room
-    addParticipant(participantId) {
-        this.participants.add(participantId);
+    // Add a participant to the room with username
+    addParticipant(participantId, username = 'Anonymous') {
+        this.participants.set(participantId, username);
         return this.getParticipantCount();
     }
 
@@ -19,6 +20,32 @@ class Room {
     removeParticipant(participantId) {
         this.participants.delete(participantId);
         return this.getParticipantCount();
+    }
+
+    // Update a participant's username
+    updateParticipantUsername(participantId, username) {
+        if (this.participants.has(participantId)) {
+            this.participants.set(participantId, username);
+            return true;
+        }
+        return false;
+    }
+
+    updateUserDrawingStatus(userId, isDrawing, color = null) {
+        if (isDrawing) {
+            this.drawingUsers.set(userId, { color });
+        } else {
+            this.drawingUsers.delete(userId);
+        }
+    }
+
+    isUserDrawing(userId) {
+        return this.drawingUsers.has(userId);
+    }
+
+    getUserDrawingColor(userId) {
+        const drawingInfo = this.drawingUsers.get(userId);
+        return drawingInfo ? drawingInfo.color : null;
     }
 
     // Get number of participants
@@ -45,8 +72,26 @@ class Room {
     }
 
     // Add a drawing to the canvas state
-    addDrawing(drawingData) {
-        this.canvasState.push(drawingData);
+    addDrawing(lineData) {
+        // If lineData has points array and color/width properties
+        if (lineData && (lineData.points || Array.isArray(lineData))) {
+            // Normalize the format to ensure it includes width
+            const normalizedLineData = {};
+
+            // Handle points
+            if (Array.isArray(lineData)) {
+                normalizedLineData.points = lineData;
+            } else if (lineData.points && Array.isArray(lineData.points)) {
+                normalizedLineData.points = lineData.points;
+            }
+
+            // Handle color and width
+            normalizedLineData.color = lineData.color || '#000000';
+            normalizedLineData.width = lineData.width || 3;
+
+            // Now store the normalized data
+            this.canvasState.push(normalizedLineData);
+        }
     }
 
     // Get room details (for API responses)
@@ -60,7 +105,12 @@ class Room {
         };
 
         if (includeParticipants) {
-            details.participants = Array.from(this.participants);
+            // Convert Map to array of objects with id and username
+            details.participants = Array.from(this.participants).map(([id, username]) => ({
+                id,
+                username,
+                drawingColor: this.getUserDrawingColor(id)
+            }));
         }
 
         return details;
