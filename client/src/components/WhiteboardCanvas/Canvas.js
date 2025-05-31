@@ -8,10 +8,11 @@ const Canvas = ({ roomId }) => {
     const [socket, setSocket] = useState(null);
     const [currentLine, setCurrentLine] = useState([]);
     const [currentColor, setCurrentColor] = useState('#000000');
+    const [canvasReady, setCanvasReady] = useState(false);
 
     const colorPresets = ['#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
 
-    // Initialize canvas and socket
+    // Initialize canvas and socket - now without currentColor dependency
     useEffect(() => {
         if (!roomId) return;
 
@@ -51,22 +52,25 @@ const Canvas = ({ roomId }) => {
 
         // Handle window resize
         const handleResize = () => {
-            const tempCanvas = document.createElement('canvas');
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
-            tempCtx.drawImage(canvas, 0, 0);
+            // Save current canvas content
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
+            // Resize canvas
             canvas.width = window.innerWidth - 40;
             canvas.height = window.innerHeight - 100;
 
+            // Restore canvas properties
             ctx.lineWidth = 3;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.drawImage(tempCanvas, 0, 0);
+            ctx.strokeStyle = currentColor;
+
+            // Restore the canvas content
+            ctx.putImageData(imageData, 0, 0);
         };
 
         window.addEventListener('resize', handleResize);
+        setCanvasReady(true);
 
         // Cleanup socket connection
         return () => {
@@ -74,9 +78,17 @@ const Canvas = ({ roomId }) => {
             socketInstance.off('canvas-state');
             window.removeEventListener('resize', handleResize);
         };
-    }, [roomId, currentColor]);
+    }, [roomId]); // Remove currentColor dependency
 
-    // Function to draw a line from data, now handling both legacy and new formats
+    // Separate effect to manage color changes without re-initializing the canvas
+    useEffect(() => {
+        if (canvasRef.current && canvasReady) {
+            const ctx = canvasRef.current.getContext('2d');
+            ctx.strokeStyle = currentColor;
+        }
+    }, [currentColor, canvasReady]);
+
+    // Function to draw a line from data
     const drawLine = (ctx, lineData) => {
         if (!lineData) return;
 
@@ -102,6 +114,9 @@ const Canvas = ({ roomId }) => {
 
         if (points.length < 2) return;
 
+        // Save current stroke style
+        const previousStrokeStyle = ctx.strokeStyle;
+
         // Set the line color
         ctx.strokeStyle = color;
 
@@ -114,14 +129,14 @@ const Canvas = ({ roomId }) => {
 
         ctx.stroke();
         ctx.closePath();
+
+        // Restore previous stroke style
+        ctx.strokeStyle = previousStrokeStyle;
     };
 
     const startDrawing = (e) => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
-
-        // Set current stroke style from state
-        ctx.strokeStyle = currentColor;
 
         const { offsetX, offsetY } = getCoordinates(e);
 
@@ -188,15 +203,9 @@ const Canvas = ({ roomId }) => {
         }
     };
 
-    // Handle color change
+    // Handle color change without clearing the canvas
     const handleColorChange = (color) => {
         setCurrentColor(color);
-
-        // Also update the current context if canvas exists
-        if (canvasRef.current) {
-            const ctx = canvasRef.current.getContext('2d');
-            ctx.strokeStyle = color;
-        }
     };
 
     return (
