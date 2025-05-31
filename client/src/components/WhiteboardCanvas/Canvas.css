@@ -55,3 +55,24 @@
     border-radius: 4px;
     cursor: pointer;
 }
+
+.clear-canvas-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-left: auto;
+    transition: background-color 0.3s;
+}
+
+.clear-canvas-btn:hover {
+    background-color: #d32f2f;
+}
+
+/* Update the color-picker-container to not use margin-left: auto anymore */
+.color-picker-container {
+    margin-left: 15px;
+}

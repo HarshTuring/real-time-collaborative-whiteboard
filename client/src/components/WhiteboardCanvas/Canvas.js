@@ -12,7 +12,7 @@ const Canvas = ({ roomId }) => {
 
     const colorPresets = ['#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
 
-    // Initialize canvas and socket - now without currentColor dependency
+    // Initialize canvas and socket
     useEffect(() => {
         if (!roomId) return;
 
@@ -39,7 +39,11 @@ const Canvas = ({ roomId }) => {
 
         // Handle receiving full canvas state
         socketInstance.on('canvas-state', (canvasState) => {
-            if (!canvasState || canvasState.length === 0) return;
+            if (!canvasState || canvasState.length === 0) {
+                // Clear the canvas if we got an empty state
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
 
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -48,6 +52,11 @@ const Canvas = ({ roomId }) => {
             canvasState.forEach(lineData => {
                 drawLine(ctx, lineData);
             });
+        });
+
+        // Handle clear canvas event
+        socketInstance.on('clear-canvas', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         });
 
         // Handle window resize
@@ -76,9 +85,10 @@ const Canvas = ({ roomId }) => {
         return () => {
             socketInstance.off('draw-line');
             socketInstance.off('canvas-state');
+            socketInstance.off('clear-canvas');
             window.removeEventListener('resize', handleResize);
         };
-    }, [roomId]); // Remove currentColor dependency
+    }, [roomId]);
 
     // Separate effect to manage color changes without re-initializing the canvas
     useEffect(() => {
@@ -208,6 +218,19 @@ const Canvas = ({ roomId }) => {
         setCurrentColor(color);
     };
 
+    // Handle clearing the canvas for all users
+    const handleClearCanvas = () => {
+        if (socket && roomId) {
+            // Clear local canvas
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Send clear command to server for all other users
+            socket.emit('clear-canvas', { roomId });
+        }
+    };
+
     return (
         <div>
             <div className="color-toolbar">
@@ -231,6 +254,10 @@ const Canvas = ({ roomId }) => {
                         aria-label="Select custom drawing color"
                     />
                 </div>
+                {/* Clear Canvas Button */}
+                <button onClick={handleClearCanvas}>
+                    Clear Canvas
+                </button>
             </div>
 
             <canvas

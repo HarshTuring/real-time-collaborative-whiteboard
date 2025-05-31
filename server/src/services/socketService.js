@@ -155,6 +155,22 @@ function initializeSocketIO(io) {
             }
         });
 
+        socket.on('clear-canvas', ({ roomId }) => {
+            try {
+                const room = roomStore.getRoom(roomId);
+
+                if (room) {
+                    // Clear the canvas state in the room
+                    room.updateCanvasState([]);
+
+                    // Broadcast to all other users in the room
+                    socket.to(roomId).emit('clear-canvas');
+                }
+            } catch (error) {
+                console.error(`Error clearing canvas: ${error.message}`);
+            }
+        });
+
         // When a user leaves a room explicitly
         socket.on('leave-room', ({ roomId, userId }) => {
             handleUserLeavingRoom(socket, roomId, userId || socket.id);
