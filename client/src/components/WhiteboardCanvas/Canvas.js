@@ -8,9 +8,11 @@ const Canvas = ({ roomId }) => {
     const [socket, setSocket] = useState(null);
     const [currentLine, setCurrentLine] = useState([]);
     const [currentColor, setCurrentColor] = useState('#000000');
+    const [currentWidth, setCurrentWidth] = useState(3); // Add state for line width
     const [canvasReady, setCanvasReady] = useState(false);
 
     const colorPresets = ['#000000', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+    const widthPresets = [1, 3, 5, 8, 12]; // Common line width options
 
     // Initialize canvas and socket
     useEffect(() => {
@@ -21,7 +23,7 @@ const Canvas = ({ roomId }) => {
         canvas.height = window.innerHeight - 100;
 
         const ctx = canvas.getContext('2d');
-        ctx.lineWidth = 3;
+        ctx.lineWidth = currentWidth; // Use current width
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.strokeStyle = currentColor;
@@ -48,7 +50,7 @@ const Canvas = ({ roomId }) => {
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Redraw all lines with their respective colors
+            // Redraw all lines with their respective colors and widths
             canvasState.forEach(lineData => {
                 drawLine(ctx, lineData);
             });
@@ -69,7 +71,7 @@ const Canvas = ({ roomId }) => {
             canvas.height = window.innerHeight - 100;
 
             // Restore canvas properties
-            ctx.lineWidth = 3;
+            ctx.lineWidth = currentWidth;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.strokeStyle = currentColor;
@@ -90,13 +92,14 @@ const Canvas = ({ roomId }) => {
         };
     }, [roomId]);
 
-    // Separate effect to manage color changes without re-initializing the canvas
+    // Update drawing properties when color or line width changes
     useEffect(() => {
         if (canvasRef.current && canvasReady) {
             const ctx = canvasRef.current.getContext('2d');
             ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentWidth;
         }
-    }, [currentColor, canvasReady]);
+    }, [currentColor, currentWidth, canvasReady]);
 
     // Function to draw a line from data
     const drawLine = (ctx, lineData) => {
@@ -104,31 +107,37 @@ const Canvas = ({ roomId }) => {
 
         let points;
         let color;
+        let width;
 
         // Handle different formats of line data
         if (Array.isArray(lineData)) {
             // Legacy format - just array of points
             points = lineData;
             color = '#000000'; // Default color
+            width = 3; // Default width
         } else if (lineData.points && Array.isArray(lineData.points)) {
-            // New format - object with points array and color
+            // New format - object with points array, color, and width
             points = lineData.points;
             color = lineData.color || '#000000';
+            width = lineData.width || 3;
         } else if (lineData.length >= 2) {
-            // Old version might have array-like object with color property
+            // Old version might have array-like object with color/width properties
             points = lineData;
             color = lineData.color || '#000000';
+            width = lineData.width || 3;
         } else {
             return; // Invalid format
         }
 
         if (points.length < 2) return;
 
-        // Save current stroke style
+        // Save current context settings
         const previousStrokeStyle = ctx.strokeStyle;
+        const previousLineWidth = ctx.lineWidth;
 
-        // Set the line color
+        // Apply line settings
         ctx.strokeStyle = color;
+        ctx.lineWidth = width;
 
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
@@ -140,13 +149,18 @@ const Canvas = ({ roomId }) => {
         ctx.stroke();
         ctx.closePath();
 
-        // Restore previous stroke style
+        // Restore previous context settings
         ctx.strokeStyle = previousStrokeStyle;
+        ctx.lineWidth = previousLineWidth;
     };
 
     const startDrawing = (e) => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
+
+        // Make sure current drawing settings are applied
+        ctx.strokeStyle = currentColor;
+        ctx.lineWidth = currentWidth;
 
         const { offsetX, offsetY } = getCoordinates(e);
 
@@ -179,12 +193,13 @@ const Canvas = ({ roomId }) => {
 
             ctx.closePath();
 
-            // Send the completed line to server with proper structure including color
+            // Send the completed line to server with color and width
             socket.emit('draw-line', {
                 roomId,
                 line: {
                     points: currentLine,
-                    color: currentColor
+                    color: currentColor,
+                    width: currentWidth
                 }
             });
 
@@ -213,47 +228,93 @@ const Canvas = ({ roomId }) => {
         }
     };
 
-    // Handle color change without clearing the canvas
+    // Handle color change
     const handleColorChange = (color) => {
         setCurrentColor(color);
     };
 
-    // Handle clearing the canvas for all users
+    // Handle line width change
+    const handleWidthChange = (width) => {
+        setCurrentWidth(width);
+    };
+
+    // Handle clearing the canvas
     const handleClearCanvas = () => {
         if (socket && roomId) {
-            // Clear local canvas
             const canvas = canvasRef.current;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Send clear command to server for all other users
             socket.emit('clear-canvas', { roomId });
         }
     };
 
     return (
         <div>
-            <div className="color-toolbar">
-                <div className="color-presets">
-                    {colorPresets.map((color) => (
-                        <button
-                            key={color}
-                            className={`color-preset ${color === currentColor ? 'selected' : ''}`}
-                            style={{ backgroundColor: color }}
-                            onClick={() => handleColorChange(color)}
-                            aria-label={`Select color ${color}`}
+            <div className="toolbar">
+                {/* Color selection section */}
+                <div className="toolbar-section">
+                    <span>
+                        Color:
+
+                    </span>
+                    <div className="color-presets">
+                        {colorPresets.map((color) => (
+                            <button
+                                key={color}
+                                className={`color-preset ${color === currentColor ? 'selected' : ''}`}
+                                style={{ backgroundColor: color }}
+                                onClick={() => handleColorChange(color)}
+                                aria-label={`Select color ${color}`}
+                            />
+                        ))}
+                    </div>
+                    <div>
+                        <input
+                            type="color"
+                            value={currentColor}
+                            onChange={(e) => handleColorChange(e.target.value)}
+                            className="color-picker"
+                            aria-label="Select custom drawing color"
                         />
-                    ))}
+                    </div>
                 </div>
+
+                {/* Line width selection section */}
                 <div>
-                    <input
-                        type="color"
-                        value={currentColor}
-                        onChange={(e) => handleColorChange(e.target.value)}
-                        className="color-picker"
-                        aria-label="Select custom drawing color"
-                    />
+                    <span>
+                        Width:
+
+                    </span>
+                    <div className="width-presets">
+                        {widthPresets.map((width) => (
+                            <button
+                                key={width}
+                                onClick={() => handleWidthChange(width)}
+                                aria-label={`Set line width to ${width}px`}
+                                className={currentWidth === width ? 'selected' : ''}
+                            >
+                                <div className="width-preset-inner" style={{ height: `${width}px` }} />
+                            </button>
+                        ))}
+                    </div>
+                    <div>
+                        <input
+                            type="range"
+                            min="1"
+                            max="20"
+                            value={currentWidth}
+                            onChange={(e) => handleWidthChange(parseInt(e.target.value))}
+                            className="width-slider"
+                            aria-label="Adjust line width"
+                        />
+                        <span>
+                            {currentWidth}px
+
+                        </span>
+                    </div>
                 </div>
+
                 {/* Clear Canvas Button */}
                 <button onClick={handleClearCanvas}>
                     Clear Canvas

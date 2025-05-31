@@ -55,18 +55,24 @@ class Room {
 
     // Add a drawing to the canvas state
     addDrawing(lineData) {
-        // Make sure lineData is properly structured with points and color
-        if (!Array.isArray(lineData) && lineData.color) {
-            // If lineData is an object with a color property
-            // Store it as is in the canvas state
-            this.canvasState.push(lineData);
-        } else if (Array.isArray(lineData)) {
-            // If it's just an array of points (backward compatibility)
-            // Add a default color
-            this.canvasState.push({
-                points: lineData,
-                color: '#000000' // Default color is black
-            });
+        // If lineData has points array and color/width properties
+        if (lineData && (lineData.points || Array.isArray(lineData))) {
+            // Normalize the format to ensure it includes width
+            const normalizedLineData = {};
+            
+            // Handle points
+            if (Array.isArray(lineData)) {
+                normalizedLineData.points = lineData;
+            } else if (lineData.points && Array.isArray(lineData.points)) {
+                normalizedLineData.points = lineData.points;
+            }
+            
+            // Handle color and width
+            normalizedLineData.color = lineData.color || '#000000';
+            normalizedLineData.width = lineData.width || 3;
+            
+            // Now store the normalized data
+            this.canvasState.push(normalizedLineData);
         }
     }
 

@@ -55,7 +55,6 @@
     border-radius: 4px;
     cursor: pointer;
 }
-
 .clear-canvas-btn {
     background-color: #f44336;
     color: white;
@@ -75,4 +74,138 @@
 /* Update the color-picker-container to not use margin-left: auto anymore */
 .color-picker-container {
     margin-left: 15px;
+}
+.toolbar {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    background: #f8f8f8;
+    border-bottom: 1px solid #ddd;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.toolbar-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toolbar-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+}
+
+.color-presets {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.color-preset {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.color-preset:hover {
+    transform: scale(1.1);
+}
+
+.color-preset.selected {
+    border-color: #333;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.color-picker-container {
+    margin-left: 5px;
+}
+
+.color-picker {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Line width controls */
+.width-presets {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.width-preset {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.width-preset.selected {
+    border-color: #333;
+    background-color: #f0f0f0;
+}
+
+.width-preset-inner {
+    width: 20px;
+    background-color: #333;
+    border-radius: 10px;
+}
+
+.width-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.width-slider {
+    width: 100px;
+}
+
+.width-value {
+    font-size: 12px;
+    color: #555;
+    min-width: 35px;
+}
+
+.clear-canvas-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-left: auto;
+    transition: background-color 0.3s;
+}
+
+.clear-canvas-btn:hover {
+    background-color: #d32f2f;
+}
+
+/* Make the canvas container take the remaining space */
+.canvas-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.whiteboard-canvas {
+    flex: 1;
+    border: 1px solid #ddd;
+    cursor: crosshair;
 }
