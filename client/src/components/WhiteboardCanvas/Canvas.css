@@ -1,15 +1,57 @@
-.whiteboard-canvas {
-    border: 1px solid #cccccc;
-    display: block;
-    background-color: white;
-    cursor: crosshair;
-    margin: 20px auto;
+.canvas-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
 }
 
-body,
-html {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    height: 100%;
+.whiteboard-canvas {
+    flex: 1;
+    border: 1px solid #ddd;
+    cursor: crosshair;
+}
+
+.color-toolbar {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: #f8f8f8;
+    border-bottom: 1px solid #ddd;
+    gap: 10px;
+}
+
+.color-presets {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.color-preset {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.color-preset:hover {
+    transform: scale(1.1);
+}
+
+.color-preset.selected {
+    border-color: #333;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+.color-picker-container {
+    margin-left: auto;
+}
+
+.color-picker {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
 }

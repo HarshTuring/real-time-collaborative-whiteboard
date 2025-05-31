@@ -86,11 +86,23 @@ function initializeSocketIO(io) {
                 const room = roomStore.getRoom(roomId);
 
                 if (room) {
-                    // Store the drawing data
-                    room.addDrawing(line);
+                    // Make sure line data is properly structured 
+                    // (either an array of points with a color property or a proper line object)
+                    let lineData = line;
+
+                    // If line is an array of points, restructure it to include color
+                    if (Array.isArray(line)) {
+                        lineData = {
+                            points: line,
+                            color: '#000000' // Default color if not provided
+                        };
+                    }
+
+                    // Store the drawing data with color
+                    room.addDrawing(lineData);
 
                     // Broadcast to all other users in the room
-                    socket.to(roomId).emit('draw-line', line);
+                    socket.to(roomId).emit('draw-line', lineData);
                 }
             } catch (error) {
                 console.error(`Error in draw-line: ${error.message}`);
@@ -124,8 +136,19 @@ function initializeSocketIO(io) {
                 const room = roomStore.getRoom(roomId);
 
                 if (room) {
-                    room.updateCanvasState(canvasState);
-                    socket.to(roomId).emit('canvas-state', canvasState);
+                    // Make sure each line in canvasState has the proper format with color
+                    const formattedCanvasState = canvasState.map(line => {
+                        if (Array.isArray(line)) {
+                            return {
+                                points: line,
+                                color: '#000000' // Default color if not provided
+                            };
+                        }
+                        return line; // Already in correct format
+                    });
+
+                    room.updateCanvasState(formattedCanvasState);
+                    socket.to(roomId).emit('canvas-state', formattedCanvasState);
                 }
             } catch (error) {
                 console.error(`Error updating canvas state: ${error.message}`);

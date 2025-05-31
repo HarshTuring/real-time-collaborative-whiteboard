@@ -54,8 +54,20 @@ class Room {
     }
 
     // Add a drawing to the canvas state
-    addDrawing(drawingData) {
-        this.canvasState.push(drawingData);
+    addDrawing(lineData) {
+        // Make sure lineData is properly structured with points and color
+        if (!Array.isArray(lineData) && lineData.color) {
+            // If lineData is an object with a color property
+            // Store it as is in the canvas state
+            this.canvasState.push(lineData);
+        } else if (Array.isArray(lineData)) {
+            // If it's just an array of points (backward compatibility)
+            // Add a default color
+            this.canvasState.push({
+                points: lineData,
+                color: '#000000' // Default color is black
+            });
+        }
     }
 
     // Get room details (for API responses)
