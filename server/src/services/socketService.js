@@ -109,6 +109,34 @@ function initializeSocketIO(io) {
             }
         });
 
+        socket.on('update-drawing-status', ({ roomId, isDrawing, color }) => {
+            try {
+                const room = roomStore.getRoom(roomId);
+
+                if (room) {
+                    // Get the username for this user
+                    const username = room.participants.get(socket.id) || 'Anonymous';
+
+                    // Update the drawing status for this user
+                    if (isDrawing) {
+                        room.updateUserDrawingStatus(socket.id, true, color);
+                    } else {
+                        room.updateUserDrawingStatus(socket.id, false);
+                    }
+
+                    // Broadcast to all users in the room including color information
+                    io.to(roomId).emit('user-drawing-update', {
+                        userId: socket.id,
+                        isDrawing,
+                        username,
+                        color: color || '#000000'
+                    });
+                }
+            } catch (error) {
+                console.error(`Error updating drawing status: ${error.message}`);
+            }
+        });
+
         // When a user sends cursor position, include username
         socket.on('cursor-position', ({ roomId, position }) => {
             try {
@@ -222,6 +250,10 @@ function initializeSocketIO(io) {
                 const room = roomStore.getRoom(roomId);
 
                 if (room) {
+                    if (room.isUserDrawing(userId)) {
+                        room.updateUserDrawingStatus(userId, false);
+                    }
+
                     const count = room.removeParticipant(userId);
                     socket.leave(roomId);
 

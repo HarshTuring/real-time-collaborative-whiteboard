@@ -7,6 +7,7 @@ class Room {
         this.createdAt = new Date();
         this.participants = new Map(); // Changed to Map to store participant ID -> username
         this.canvasState = []; // Store the current canvas state
+        this.drawingUsers = new Map(); // Store users who are currently drawing
     }
 
     // Add a participant to the room with username
@@ -28,6 +29,23 @@ class Room {
             return true;
         }
         return false;
+    }
+
+    updateUserDrawingStatus(userId, isDrawing, color = null) {
+        if (isDrawing) {
+            this.drawingUsers.set(userId, { color });
+        } else {
+            this.drawingUsers.delete(userId);
+        }
+    }
+
+    isUserDrawing(userId) {
+        return this.drawingUsers.has(userId);
+    }
+
+    getUserDrawingColor(userId) {
+        const drawingInfo = this.drawingUsers.get(userId);
+        return drawingInfo ? drawingInfo.color : null;
     }
 
     // Get number of participants
@@ -59,18 +77,18 @@ class Room {
         if (lineData && (lineData.points || Array.isArray(lineData))) {
             // Normalize the format to ensure it includes width
             const normalizedLineData = {};
-            
+
             // Handle points
             if (Array.isArray(lineData)) {
                 normalizedLineData.points = lineData;
             } else if (lineData.points && Array.isArray(lineData.points)) {
                 normalizedLineData.points = lineData.points;
             }
-            
+
             // Handle color and width
             normalizedLineData.color = lineData.color || '#000000';
             normalizedLineData.width = lineData.width || 3;
-            
+
             // Now store the normalized data
             this.canvasState.push(normalizedLineData);
         }
@@ -90,7 +108,8 @@ class Room {
             // Convert Map to array of objects with id and username
             details.participants = Array.from(this.participants).map(([id, username]) => ({
                 id,
-                username
+                username,
+                drawingColor: this.getUserDrawingColor(id)
             }));
         }
 

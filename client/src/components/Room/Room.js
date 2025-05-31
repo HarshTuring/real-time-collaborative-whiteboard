@@ -20,6 +20,61 @@ const Room = () => {
     const [participants, setParticipants] = useState([]);
     const [socket, setSocket] = useState(null);
     const [showParticipantsList, setShowParticipantsList] = useState(true);
+    const [drawingUsers, setDrawingUsers] = useState(new Map());
+
+    useEffect(() => {
+        const handleUserDrawingUpdate = (event) => {
+            const { userId, isDrawing, username, color } = event.detail;
+            
+            setDrawingUsers(prev => {
+                const newMap = new Map(prev);
+                if (isDrawing) {
+                    newMap.set(userId, { username, color });
+                } else {
+                    newMap.delete(userId);
+                }
+                return newMap;
+            });
+        };
+
+        // Listen for drawing updates from the Canvas component
+        document.addEventListener('user-drawing-update', handleUserDrawingUpdate);
+
+        // Socket event handlers for room updates
+        const handleParticipantJoined = (data) => {
+            setParticipantCount(data.count);
+            if (data.participants) {
+                setParticipants(data.participants);
+            }
+        };
+
+        // Update room details handler
+        const handleRoomUpdated = (roomData) => {
+            setRoom(roomData);
+            setParticipantCount(roomData.participantCount);
+            
+            // Update drawing status from participants data
+            if (roomData.participants) {
+                const newDrawingUsers = new Map();
+                
+                roomData.participants.forEach(participant => {
+                    if (participant.isDrawing) {
+                        newDrawingUsers.set(participant.id, { 
+                            username: participant.username,
+                            color: participant.drawingColor || '#000000' 
+                        });
+                    }
+                });
+                
+                setDrawingUsers(newDrawingUsers);
+            }
+        };
+
+        // Cleanup
+        return () => {
+            document.removeEventListener('user-drawing-update', handleUserDrawingUpdate);
+        };
+    }, []);
 
     useEffect(() => {
         // Fetch room details
@@ -175,52 +230,36 @@ const Room = () => {
                                 </div>
                             </div>
                         </div>
-                        <div>
-                            <button onClick={copyRoomLink}>
+                        <div className="room-actions">
+                            <button onClick={copyRoomLink} className="share-button">
                                 Share Room
-                                {shareTooltip &&
-                                    <span>
-                                        {shareTooltip}
-
-                                    </span>
-                                }
-
+                                {shareTooltip && <span className="tooltip">{shareTooltip}</span>}
                             </button>
-                            <button onClick={handleLeaveRoom}>
+                            <button onClick={handleLeaveRoom} className="leave-button">
                                 Leave Room
                             </button>
                         </div>
                     </div>
-                    <div>
-                        <div className={`participants-list-container ${showParticipantsList ? 'show' : 'hide'}`}>
-                            <h3>
-                                Connected Users
-
-                            </h3>
-                            {participants.length === 0 ? (
-                                <p>
-                                    No other participants yet
-
-                                </p>
-                            ) : (
-                                <ul>
-                                    {participants.map(participant => (
-                                        <li key={participant.id}>
-                                            <span>
-                                                {participant.username}
-                                                {participant.id === socket?.id && <span className="you-indicator"> (You)
-                                                </span>
-                                                }
-                                            </span>
-
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
+                    {showParticipantsList && (
+                        <div className="participants-list-container">
+                            <h3>Participants</h3>
+                            <ul className="participants-ul">
+                                {participants.map((participant) => (
+                                    <li key={participant.id} className="participant-item">
+                                        <span className="participant-name" style={{
+                                            color: drawingUsers.get(participant.id)?.color || '#000000'
+                                        }}>
+                                            {participant.username}
+                                            {drawingUsers.has(participant.id) && ' (drawing)'}
+                                            {participant.id === socket?.id && ' (you)'}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
-                        <div>
-                            <Canvas roomId={roomId} username={username} />
-                        </div>
+                    )}
+                    <div className="canvas-container">
+                        <Canvas roomId={roomId} />
                     </div>
                 </>
             )}
