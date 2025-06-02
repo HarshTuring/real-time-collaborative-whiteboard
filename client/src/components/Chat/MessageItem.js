@@ -1,44 +1,30 @@
 import React from 'react';
+import { formatDistanceToNow } from 'date-fns';
 import './MessageItem.css';
 
-const formatTimestamp = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
+const MessageItem = ({ message, isCurrentUser }) => {
+    const { text, username, timestamp, type } = message;
 
-const MessageItem = ({ message, isOwnMessage }) => {
-    const { username, text, timestamp, type } = message;
-
-    // Handle system messages differently
     if (type === 'notification') {
         return (
-            <div>
-                <div className="message-text">
-                    {text}
-                </div>
-                <span>
-                    {formatTimestamp(timestamp)}
-
-                </span>
+            <div className="message-item notification">
+                <span className="notification-text">{text}</span>
             </div>
         );
     }
 
     return (
-
-        <div>
-            <div className="message-header">
-                <span>
-                    {username}
-
-                </span>
-                <span>
-                    {formatTimestamp(timestamp)}
-
-                </span>
-            </div>
-            <div>
-                {text}
+        <div className={`message-item ${isCurrentUser ? 'own-message' : 'other-message'}`}>
+            <div className="message-content">
+                {!isCurrentUser && (
+                    <div className="message-sender">{username}</div>
+                )}
+                <div className="message-bubble">
+                    {text}
+                </div>
+                <div className="message-time">
+                    {formatDistanceToNow(new Date(timestamp), { addSuffix: true })}
+                </div>
             </div>
         </div>
     );

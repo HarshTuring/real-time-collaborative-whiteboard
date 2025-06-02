@@ -26,6 +26,41 @@ export const joinRoom = (roomId, username) => {
     return socket;
 };
 
+export const sendChatMessage = (roomId, text) => {
+    if (!socket) initializeSocket();
+
+    if (!text || !text.trim()) return;
+
+    socket.emit('send-message', { roomId, text });
+};
+
+// Request recent chat messages
+export const getRecentChatMessages = (roomId) => {
+    if (!socket) initializeSocket();
+
+    socket.emit('get-recent-messages', { roomId });
+};
+
+// Subscribe to new messages
+export const subscribeToMessages = (callback) => {
+    if (!socket) initializeSocket();
+
+    socket.on('receive-message', callback);
+
+    return () => {
+        if (socket) socket.off('receive-message', callback);
+    };
+};
+export const subscribeToMessageHistory = (callback) => {
+    if (!socket) initializeSocket();
+
+    socket.on('recent-messages', callback);
+
+    return () => {
+        if (socket) socket.off('recent-messages', callback);
+    };
+};
+
 export const leaveRoom = (roomId) => {
     if (!socket) return;
 
@@ -65,5 +100,9 @@ export default {
     updateRoomName,
     toggleRoomVisibility,
     updateUsername,
-    sendCursorPosition
+    sendCursorPosition,
+    sendChatMessage,
+    getRecentChatMessages,
+    subscribeToMessages,
+    subscribeToMessageHistory
 };

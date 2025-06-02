@@ -6,6 +6,61 @@ function initializeSocketIO(io) {
     io.on('connection', (socket) => {
         console.log('A user connected:', socket.id);
 
+        socket.on('send-message', ({ roomId, text }) => {
+            try {
+                const room = roomStore.getRoom(roomId);
+
+                if (room && text && text.trim()) {
+                    // Get the username for this user
+                    const username = room.participants.get(socket.id) || 'Anonymous';
+
+                    // Get user's current drawing color if they are drawing
+                    const drawingInfo = room.drawingUsers.get(socket.id);
+                    const color = drawingInfo ? drawingInfo.color : null;
+
+                    // Create message object
+                    const message = {
+                        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                        roomId,
+                        userId: socket.id,
+                        username,
+                        text: text.trim(),
+                        timestamp: Date.now(),
+                        type: 'user-message',
+                        color
+                    };
+
+                    // Add message to room's history
+                    room.addMessage(message);
+
+                    // Broadcast message to all users in the room (including sender)
+                    io.to(roomId).emit('receive-message', message);
+
+                    console.log(`Message from ${username} in room ${roomId}: ${text.substring(0, 30)}`);
+                }
+            } catch (error) {
+                console.error(`Error handling chat message: ${error.message}`);
+                socket.emit('error', { message: 'Failed to send message' });
+            }
+        });
+
+        // Request for recent messages
+        socket.on('get-recent-messages', ({ roomId }) => {
+            try {
+                const room = roomStore.getRoom(roomId);
+
+                if (room) {
+                    // Send recent messages to the requesting user
+                    socket.emit('recent-messages', {
+                        messages: room.getRecentMessages()
+                    });
+                }
+            } catch (error) {
+                console.error(`Error getting recent messages: ${error.message}`);
+                socket.emit('error', { message: 'Failed to get messages' });
+            }
+        });
+
         // When a user creates or joins a room
         socket.on('join-room', ({ roomId, userId, username }) => {
             try {
@@ -33,6 +88,13 @@ function initializeSocketIO(io) {
                     id,
                     username: name
                 }));
+
+                const systemMessage = room.addSystemMessage(`${username || 'Anonymous'} has joined the room`);
+                io.to(roomId).emit('receive-message', systemMessage);
+
+                socket.emit('recent-messages', {
+                    messages: room.getRecentMessages()
+                });
 
                 // Notify all users in the room about the new participant
                 io.to(roomId).emit('participant-joined', {
@@ -256,6 +318,9 @@ function initializeSocketIO(io) {
 
                     const count = room.removeParticipant(userId);
                     socket.leave(roomId);
+
+                    const systemMessage = room.addSystemMessage(`${username} has left the room`);
+                    io.to(roomId).emit('receive-message', systemMessage);
 
                     // Get updated participants list
                     const participants = Array.from(room.participants).map(([id, name]) => ({

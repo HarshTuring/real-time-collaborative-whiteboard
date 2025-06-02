@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { FaPaperPlane } from 'react-icons/fa';
 import './MessageInput.css';
 
 const MessageInput = ({ onSendMessage }) => {
@@ -7,34 +6,29 @@ const MessageInput = ({ onSendMessage }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-
-        // Trim and validate message
-        const trimmedMessage = message.trim();
-        if (!trimmedMessage) return;
-
-        // Send message to parent component
-        onSendMessage(trimmedMessage);
-
-        // Clear input
-        setMessage('');
+        if (message.trim()) {
+            onSendMessage(message);
+            setMessage('');
+        }
     };
 
     return (
-        <div>
-            <form>
-                <input
-                    type="text"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Type a message..."
-                    aria-label="Message"
-                    className="message-input"
-                />
-                <button>
-                    <FaPaperPlane />
-                </button>
-            </form>
-        </div>
+        <form className="message-input-form" onSubmit={handleSubmit}>
+            <input
+                type="text"
+                className="message-input"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type a message..."
+            />
+            <button 
+                type="submit" 
+                className="send-button"
+                disabled={!message.trim()}
+            >
+                Send
+            </button>
+        </form>
     );
 };
 

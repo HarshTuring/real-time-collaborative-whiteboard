@@ -8,6 +8,9 @@ class Room {
         this.participants = new Map(); // Changed to Map to store participant ID -> username
         this.canvasState = []; // Store the current canvas state
         this.drawingUsers = new Map(); // Store users who are currently drawing
+
+        this.messages = []; // Array to store recent messages
+        this.messageLimit = 100;
     }
 
     // Add a participant to the room with username
@@ -29,6 +32,37 @@ class Room {
             return true;
         }
         return false;
+    }
+
+    addMessage(message) {
+        this.messages.push(message);
+        
+        // Keep only the most recent messages
+        if (this.messages.length > this.messageLimit) {
+            this.messages = this.messages.slice(-this.messageLimit);
+        }
+        
+        return message;
+    }
+    
+    // Get recent messages
+    getRecentMessages() {
+        return this.messages;
+    }
+    
+    // Create and add a system message
+    addSystemMessage(text) {
+        const systemMessage = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            roomId: this.id,
+            userId: 'system',
+            username: 'System',
+            text,
+            timestamp: Date.now(),
+            type: 'system-notification'
+        };
+        
+        return this.addMessage(systemMessage);
     }
 
     updateUserDrawingStatus(userId, isDrawing, color = null) {

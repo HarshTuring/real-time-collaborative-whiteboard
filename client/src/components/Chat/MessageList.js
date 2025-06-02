@@ -11,27 +11,24 @@ const MessageList = ({ messages, currentUserId }) => {
     }, [messages]);
 
     return (
-        <div>
-            <div className="message-list">
-                {messages.length === 0 ? (
-                    <div className="no-messages">
-                        No messages yet. Start the conversation!
-                    </div>
-                ) : (
-                    messages.map(message => (
-                        <MessageItem
-                            key={message.id}
-                            message={message}
-                            isOwnMessage={message.userId === currentUserId}
-                        />
-
-                    ))
-                )}
-                <div>
+        <div className="message-list">
+            {messages.length === 0 ? (
+                <div className="no-messages">
+                    No messages yet. Start the conversation!
                 </div>
+            ) : (
+                messages.map(message => (
+                    <MessageItem
+                        key={message.id}
+                        message={message}
+                        isCurrentUser={message.userId === currentUserId}
+                    />
+                ))
+            )}
+            <div>
             </div>
-            );
         </div>
-)};
+    );
+};
 
 export default MessageList;

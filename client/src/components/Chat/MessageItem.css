@@ -1,72 +1,59 @@
 .message-item {
-    padding: 10px 15px;
-    border-radius: 8px;
-    max-width: 80%;
-    align-self: flex-start;
-    background-color: white;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    position: relative;
-}
-
-.message-header {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
+    max-width: 85%;
 }
 
-.message-username {
-    font-weight: 600;
+.message-item.own-message {
+    margin-left: auto;
+}
+
+.message-item.other-message {
+    margin-right: auto;
+}
+
+.message-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.message-sender {
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 2px;
+}
+
+.message-bubble {
+    padding: 8px 12px;
+    border-radius: 12px;
+    background-color: #f0f0f0;
     color: #333;
-    font-size: 0.95rem;
+    word-break: break-word;
+}
+
+.own-message .message-bubble {
+    background-color: #007bff;
+    color: white;
 }
 
 .message-time {
-    font-size: 0.75rem;
-    color: #999;
-    margin-left: 8px;
-}
-
-.message-text {
-    word-break: break-word;
-    color: #333;
-    line-height: 1.4;
-}
-
-/* Own messages are aligned to the right with different styling */
-.own-message {
+    font-size: 0.7rem;
+    color: #888;
+    margin-top: 2px;
     align-self: flex-end;
-    background-color: #e7f5ff;
-    border: 1px solid #d1e7fa;
 }
 
-.own-message .message-username {
-    color: #2b6dad;
+.message-item.notification {
+    justify-content: center;
+    margin: 8px auto;
+    max-width: 100%;
 }
 
-/* System notification styling */
-.system-message {
-    align-self: center;
-    background-color: transparent;
-    box-shadow: none;
+.notification-text {
+    font-size: 0.8rem;
     color: #666;
     font-style: italic;
-    font-size: 0.9rem;
-    padding: 5px 10px;
-    max-width: 90%;
-    text-align: center;
-}
-
-.system-message .message-text {
-    color: #666;
-}
-
-.system-message .message-time {
-    font-size: 0.7rem;
-}
-
-@media (max-width: 768px) {
-    .message-item {
-        max-width: 90%;
-    }
+    background-color: #f8f8f8;
+    padding: 4px 12px;
+    border-radius: 12px;
 }
