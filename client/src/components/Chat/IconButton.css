@@ -1,0 +1,58 @@
+.icon-button {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: white;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: #444;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    z-index: 100;
+}
+
+.icon-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    background-color: #f0f0f0;
+}
+
+.icon-button:active {
+    transform: scale(0.98);
+}
+
+.badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #ff4d4f;
+    color: white;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 0 5px;
+}
+
+@media (max-width: 768px) {
+    .icon-button {
+        width: 42px;
+        height: 42px;
+        font-size: 1.1rem;
+    }
+
+    .badge {
+        min-width: 18px;
+        height: 18px;
+        font-size: 0.65rem;
+    }
+}

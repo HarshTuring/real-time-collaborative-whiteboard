@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Canvas from '../WhiteboardCanvas/Canvas';
+import ChatPanel from '../Chat/ChatPanel';
 import { getRoomDetails } from '../../services/api';
 import { joinRoom, leaveRoom } from '../../services/socket';
 import './Room.css';
@@ -261,6 +262,10 @@ const Room = () => {
                     <div className="canvas-container">
                         <Canvas roomId={roomId} />
                     </div>
+                    <ChatPanel 
+                        roomId={roomId} 
+                        currentUser={{ id: socket?.id, username: username }} 
+                    />
                 </>
             )}
         </div>
