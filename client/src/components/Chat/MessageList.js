@@ -27,9 +27,11 @@ const MessageList = ({ messages, currentUserId }) => {
 
                     ))
                 )}
+                <div>
+                </div>
             </div>
+            );
         </div>
-    );
-};
+)};
 
 export default MessageList;

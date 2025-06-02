@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
-import IconButton from './IconButton';
-import { FaComments, FaTimes } from 'react-icons/fa';
+import { FaComments, FaTimes, FaWindowMinimize } from 'react-icons/fa';
 import './ChatPanel.css';
 
 // Mock data for testing
@@ -19,16 +18,65 @@ const ChatPanel = ({ roomId, currentUser }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState(MOCK_MESSAGES);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [position, setPosition] = useState({ x: window.innerWidth - 320, y: 100 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+
+    const chatPanelRef = useRef(null);
+
+    // Handle dragging functionality
+    const handleMouseDown = (e) => {
+        if (e.target.closest('.chat-header')) {
+            e.preventDefault();
+            setIsDragging(true);
+            const rect = chatPanelRef.current.getBoundingClientRect();
+            setDragOffset({
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            });
+        }
+    };
+
+    const handleMouseMove = (e) => {
+        if (isDragging && chatPanelRef.current) {
+            e.preventDefault();
+            const newX = e.clientX - dragOffset.x;
+            const newY = e.clientY - dragOffset.y;
+            setPosition({ x: newX, y: newY });
+        }
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    // Add and remove global event listeners for dragging
+    useEffect(() => {
+        if (isDragging) {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = 'grabbing';
+        } else {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = 'default';
+        }
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = 'default';
+        };
+    }, [isDragging]);
 
     const toggleChat = () => {
         setIsOpen(!isOpen);
         if (!isOpen) {
-            setUnreadCount(0); // Reset unread count when opening
+            setUnreadCount(0);
         }
     };
 
     const handleSendMessage = (text) => {
-        // In the actual implementation, this would send via socket
         const newMessage = {
             id: Date.now(),
             userId: currentUser.id,
@@ -36,13 +84,10 @@ const ChatPanel = ({ roomId, currentUser }) => {
             text,
             timestamp: Date.now()
         };
-
         setMessages([...messages, newMessage]);
     };
 
-    // In the actual implementation, this would listen for socket events
     useEffect(() => {
-        // Simulate receiving new messages
         const timer = setTimeout(() => {
             if (!isOpen) {
                 setUnreadCount(prev => prev + 1);
@@ -54,35 +99,44 @@ const ChatPanel = ({ roomId, currentUser }) => {
 
     return (
         <>
-            {/* Chat toggle button */}
-            <div>
-                <IconButton
-                    icon={isOpen ? <FaTimes />
+            <button className="chat-toggle-btn" onClick={toggleChat}>
+                <FaComments />
+                {unreadCount > 0 && !isOpen && (
+                    <span className="badge">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                )}
+            </button>
 
-                        :
-
-                        <FaComments />
-                    }
-                    onClick={toggleChat}
-                    badge={unreadCount > 0 && !isOpen ? unreadCount : null}
-                    label={isOpen ? "Close chat" : "Open chat"}
-                />
-
-            </div>
-            {/* Chat panel */}
-            <div>
-                <div className="chat-header">
-                    <h3>
-                        Room Chat
-
-                    </h3>
-                    <button>
-                        <FaTimes />
-                    </button>
+            {isOpen && (
+                <div 
+                    ref={chatPanelRef}
+                    className="chat-panel draggable"
+                    style={{
+                        left: `${position.x}px`,
+                        top: `${position.y}px`,
+                        cursor: isDragging ? 'grabbing' : 'default'
+                    }}
+                >
+                    <div 
+                        className="chat-header"
+                        onMouseDown={handleMouseDown}
+                    >
+                        <h3>Room Chat</h3>
+                        <div className="chat-controls">
+                            <button className="chat-close-btn" onClick={toggleChat}>
+                                <FaTimes />
+                            </button>
+                        </div>
+                    </div>
+                    <div className="message-list-container">
+                        <MessageList messages={messages} currentUserId={currentUser.id} />
+                    </div>
+                    <div className="message-input-container">
+                        <MessageInput onSendMessage={handleSendMessage} />
+                    </div>
                 </div>
-                <MessageList messages={messages} currentUserId={currentUser.id} />
-                <MessageInput onSendMessage={handleSendMessage} />
-            </div>
+            )}
         </>
     );
 };
