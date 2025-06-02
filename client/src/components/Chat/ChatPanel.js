@@ -9,6 +9,7 @@ import {
     getRecentChatMessages
 } from '../../services/socket';
 import './ChatPanel.css';
+import messageSound from "../../../public/assets/message-notification.mp3"
 
 const ChatPanel = ({ roomId, currentUser }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -18,8 +19,27 @@ const ChatPanel = ({ roomId, currentUser }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [lastReadMessageId, setLastReadMessageId] = useState(null);
+    const [soundEnabled, setSoundEnabled] = useState(true); // Allow users to toggle sound
 
     const chatPanelRef = useRef(null);
+    const audioRef = useRef(new Audio(messageSound));
+
+
+    const playNotificationSound = () => {
+        if (soundEnabled) {
+            // Reset the audio to start
+            audioRef.current.currentTime = 0;
+            // Play the sound
+            audioRef.current.play().catch(err => {
+                // Handle autoplay restrictions - many browsers require user interaction before playing audio
+                console.log('Audio playback failed:', err);
+            });
+        }
+    };
+
+    const toggleSound = () => {
+        setSoundEnabled(!soundEnabled);
+    };
 
     // Handle dragging functionality
     const handleMouseDown = (e) => {
@@ -73,6 +93,25 @@ const ChatPanel = ({ roomId, currentUser }) => {
         }
     }, [roomId]);
 
+    const requestAudioPermission = () => {
+        // Create and play a silent audio first time to get permission
+        const silentAudio = new Audio(messageSound);
+        silentAudio.volume = 0.01;
+        const playAttempt = silentAudio.play();
+
+        if (playAttempt) {
+            playAttempt.catch(e => {
+                console.log('Audio permission not granted yet');
+            });
+        }
+    };
+
+    // Call this on component mount or on first user click
+    useEffect(() => {
+        // Try to get audio permission when component mounts
+        requestAudioPermission();
+    }, []);
+
     // Subscribe to socket events for chat
     useEffect(() => {
         // Handle new messages
@@ -87,6 +126,15 @@ const ChatPanel = ({ roomId, currentUser }) => {
                 // If chat is closed and the message is not from the current user,
                 // increment unread count
                 if (!isOpen && message.userId !== currentUser.id) {
+                    setUnreadCount(count => count + 1);
+                }
+
+                if (
+                    message.userId !== currentUser.id &&
+                    message.type !== 'notification' &&
+                    (!isOpen || document.visibilityState !== 'visible')
+                ) {
+                    playNotificationSound();
                     setUnreadCount(count => count + 1);
                 }
 
