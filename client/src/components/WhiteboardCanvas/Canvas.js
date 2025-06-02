@@ -65,7 +65,7 @@ const Canvas = ({ roomId }) => {
         socketInstance.on('user-drawing-update', ({ userId, isDrawing, username, color }) => {
             // This event will be handled in the Room component
             // We'll forward this to it via a custom event
-            const drawingUpdateEvent = new CustomEvent('user-drawing-update', { 
+            const drawingUpdateEvent = new CustomEvent('user-drawing-update', {
                 detail: { userId, isDrawing, username, color }
             });
             document.dispatchEvent(drawingUpdateEvent);
@@ -99,30 +99,30 @@ const Canvas = ({ roomId }) => {
     // Update drawing status with debounce
     const updateDrawingStatus = useCallback((isCurrentlyDrawing) => {
         if (!socket) return;
-        
+
         // Clear any existing timeout
         if (drawingTimeoutRef.current) {
             clearTimeout(drawingTimeoutRef.current);
             drawingTimeoutRef.current = null;
         }
-        
+
         // If user just started drawing and wasn't already marked as drawing
         if (isCurrentlyDrawing && !isUserDrawing) {
             setIsUserDrawing(true);
-            socket.emit('update-drawing-status', { 
-                roomId, 
+            socket.emit('update-drawing-status', {
+                roomId,
                 isDrawing: true,
                 color: currentColor
             });
-        } 
+        }
         // If user just stopped drawing
         else if (!isCurrentlyDrawing && isUserDrawing) {
             // Set a timeout before marking as not drawing
             drawingTimeoutRef.current = setTimeout(() => {
                 setIsUserDrawing(false);
-                socket.emit('update-drawing-status', { 
-                    roomId, 
-                    isDrawing: false 
+                socket.emit('update-drawing-status', {
+                    roomId,
+                    isDrawing: false
                 });
                 drawingTimeoutRef.current = null;
             }, DRAWING_DEBOUNCE_MS);
@@ -141,11 +141,11 @@ const Canvas = ({ roomId }) => {
     // Function to draw a line from data
     const drawLine = (ctx, lineData) => {
         if (!lineData) return;
-        
+
         let points;
         let color;
         let width;
-        
+
         if (Array.isArray(lineData)) {
             points = lineData;
             color = '#000000';
@@ -161,17 +161,17 @@ const Canvas = ({ roomId }) => {
         } else {
             return;
         }
-        
+
         if (points.length < 2) return;
 
         // Save current context settings
         const previousStrokeStyle = ctx.strokeStyle;
         const previousLineWidth = ctx.lineWidth;
-        
+
         // Apply line settings
         ctx.strokeStyle = color;
         ctx.lineWidth = width;
-        
+
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
 
@@ -181,7 +181,7 @@ const Canvas = ({ roomId }) => {
 
         ctx.stroke();
         ctx.closePath();
-        
+
         // Restore previous context settings
         ctx.strokeStyle = previousStrokeStyle;
         ctx.lineWidth = previousLineWidth;
@@ -199,7 +199,7 @@ const Canvas = ({ roomId }) => {
         ctx.beginPath();
         ctx.moveTo(offsetX, offsetY);
         setIsDrawing(true);
-        
+
         // Start tracking drawing status
         updateDrawingStatus(true);
 
@@ -219,7 +219,7 @@ const Canvas = ({ roomId }) => {
 
         ctx.lineTo(offsetX, offsetY);
         ctx.stroke();
-        
+
         // Refresh the drawing status to reset the debounce timer
         updateDrawingStatus(true);
     };
@@ -243,7 +243,7 @@ const Canvas = ({ roomId }) => {
 
             setIsDrawing(false);
             setCurrentLine([]);
-            
+
             // Start debounce for drawing status
             updateDrawingStatus(false);
         }
@@ -272,11 +272,11 @@ const Canvas = ({ roomId }) => {
     // Handle color change
     const handleColorChange = (color) => {
         setCurrentColor(color);
-        
+
         // If the user is currently drawing, update the color on the server
         if (isUserDrawing && socket) {
-            socket.emit('update-drawing-status', { 
-                roomId, 
+            socket.emit('update-drawing-status', {
+                roomId,
                 isDrawing: true,
                 color: color
             });
@@ -300,87 +300,88 @@ const Canvas = ({ roomId }) => {
     };
 
     return (
-<div>
-        <div className="toolbar">
-            {/* Color selection section */}
-            <div className="toolbar-section">
-<span>
-                    Color:
-</span>
-                <div className="color-presets">
-                    {colorPresets.map((color) => (
-                        <button
-                            key={color}
-                            className={`color-preset ${color === currentColor ? 'selected' : ''}`}
-                            style={{ backgroundColor: color }}
-                            onClick={() => handleColorChange(color)}
-                            aria-label={`Select color ${color}`}
+        <div>
+            <div className="toolbar">
+                {/* Color selection section */}
+                <div className="toolbar-section">
+                    <span>
+                        Color:
+                    </span>
+                    <div className="color-presets">
+                        {colorPresets.map((color) => (
+                            <button
+                                key={color}
+                                className={`color-preset ${color === currentColor ? 'selected' : ''}`}
+                                style={{ backgroundColor: color }}
+                                onClick={() => handleColorChange(color)}
+                                aria-label={`Select color ${color}`}
+                            />
+                        ))}
+                    </div>
+                    <div>
+                        <input
+                            type="color"
+                            value={currentColor}
+                            onChange={(e) => handleColorChange(e.target.value)}
+                            className="color-picker"
+                            aria-label="Select custom drawing color"
                         />
-                    ))}
-</div>
-<div>
-                    <input
-                        type="color"
-                        value={currentColor}
-                        onChange={(e) => handleColorChange(e.target.value)}
-                        className="color-picker"
-                        aria-label="Select custom drawing color"
-                    />
-</div>
+                    </div>
+                </div>
+
+                {/* Line width selection section */}
+                <div>
+                    <span>
+                        Width:
+                    </span>
+                    <div className="width-presets">
+                        {widthPresets.map((width) => (
+                            <button
+                                key={width}
+                                onClick={() => handleWidthChange(width)}
+                                aria-label={`Set line width to ${width}px`}
+                                className={currentWidth === width ? 'selected' : ''}
+                            >
+                                <div className="width-preset-inner" style={{ height: `${width}px` }} />
+                            </button>
+                        ))}
+                    </div>
+                    <div>
+                        <input
+                            type="range"
+                            min="1"
+                            max="20"
+                            value={currentWidth}
+                            onChange={(e) => handleWidthChange(parseInt(e.target.value))}
+                            className="width-slider"
+                            aria-label="Adjust line width"
+                        />
+                        <span>
+                            {currentWidth}px
+                        </span>
+                    </div>
+                </div>
+
+                {/* Clear Canvas Button */}
+                <button onClick={handleClearCanvas}>
+                    Clear Canvas
+                </button>
             </div>
 
-            {/* Line width selection section */}
-<div>
-<span>
-                    Width:
-</span>
-                <div className="width-presets">
-                    {widthPresets.map((width) => (
-                        <button
-                            key={width}
-                            onClick={() => handleWidthChange(width)}
-                            aria-label={`Set line width to ${width}px`}
-                            className={currentWidth === width ? 'selected' : ''}
-                        >
-                            <div className="width-preset-inner" style={{ height: `${width}px` }} />
-                        </button>
-                    ))}
-</div>
-<div>
-                    <input
-                        type="range"
-                        min="1"
-                        max="20"
-                        value={currentWidth}
-                        onChange={(e) => handleWidthChange(parseInt(e.target.value))}
-                        className="width-slider"
-                        aria-label="Adjust line width"
-                    />
-<span>
-                        {currentWidth}px
-</span>
-</div>
-            </div>
-
-            {/* Clear Canvas Button */}
-<button onClick={handleClearCanvas}>
-                Clear Canvas
-</button>
+            <canvas
+                ref={canvasRef}
+                role='canvas'
+                className="whiteboard-canvas"
+                onMouseDown={startDrawing}
+                onMouseMove={draw}
+                onMouseUp={stopDrawing}
+                onMouseOut={stopDrawing}
+                onTouchStart={startDrawing}
+                onTouchMove={draw}
+                onTouchEnd={stopDrawing}
+            />
         </div>
-
-        <canvas
-            ref={canvasRef}
-            className="whiteboard-canvas"
-            onMouseDown={startDrawing}
-            onMouseMove={draw}
-            onMouseUp={stopDrawing}
-            onMouseOut={stopDrawing}
-            onTouchStart={startDrawing}
-            onTouchMove={draw}
-            onTouchEnd={stopDrawing}
-        />
-    </div>
-);
+    );
 };
 
 export default Canvas;
