@@ -100,13 +100,16 @@ function initializeSocketIO(io) {
 
                 console.log(`User ${actualUserId} (${username || 'Anonymous'}) joined room ${roomId}`);
 
+                const isAdmin = room.isAdmin(actualUserId);
+
                 // Send existing canvas state to the new user
                 socket.emit('canvas-state', room.canvasState);
 
                 // Get participants with usernames
                 const participants = Array.from(room.participants).map(([id, name]) => ({
                     id,
-                    username: name
+                    username: name,
+                    isAdmin: room.isAdmin(id)
                 }));
 
                 const systemMessage = room.addSystemMessage(`${username || 'Anonymous'} has joined the room`);
@@ -116,12 +119,17 @@ function initializeSocketIO(io) {
                     messages: room.getRecentMessages()
                 });
 
+                socket.emit('canvas-lock-status', {
+                    locked: room.isLocked()
+                });
+
                 // Notify all users in the room about the new participant
                 io.to(roomId).emit('participant-joined', {
                     userId: actualUserId,
                     username: username || 'Anonymous',
                     count: room.getParticipantCount(),
-                    participants: participants
+                    participants: participants,
+                    isAdmin: isAdmin
                 });
 
                 // Notify about room update
@@ -129,6 +137,51 @@ function initializeSocketIO(io) {
             } catch (error) {
                 console.error(`Error joining room: ${error.message}`);
                 socket.emit('error', { message: 'Failed to join room' });
+            }
+        });
+
+        socket.on('toggle-canvas-lock', ({ roomId }) => {
+            try {
+                const room = roomStore.getRoom(roomId);
+                
+                if (!room) {
+                    socket.emit('error', { message: 'Room not found' });
+                    return;
+                }
+                
+                // Check if the user is the admin
+                if (!room.isAdmin(socket.data.persistentUserId)) {
+                    socket.emit('error', { 
+                        message: 'Only the room admin can lock or unlock the canvas' 
+                    });
+                    return;
+                }
+                
+                // Toggle the lock state
+                const isLocked = room.toggleLock();
+                console.log(`Room ${roomId} canvas ${isLocked ? 'locked' : 'unlocked'} by admin ${socket.data.persistentUserId}`);
+                
+                // Get admin username
+                const adminUsername = room.participants.get(socket.data.persistentUserId) || 'Admin';
+                
+                // Create system message
+                const actionText = `${adminUsername} has ${isLocked ? 'locked' : 'unlocked'} the canvas`;
+                const systemMessage = room.addSystemMessage(actionText);
+                
+                // Broadcast lock status to all users in the room
+                io.to(roomId).emit('canvas-lock-status', {
+                    locked: isLocked,
+                    lockedBy: adminUsername
+                });
+                
+                // Broadcast the system message
+                io.to(roomId).emit('receive-message', systemMessage);
+                
+                // Update room details
+                io.to(roomId).emit('room-updated', room.getDetails(true));
+            } catch (error) {
+                console.error(`Error toggling canvas lock: ${error.message}`);
+                socket.emit('error', { message: 'Failed to toggle canvas lock' });
             }
         });
 
@@ -168,6 +221,12 @@ function initializeSocketIO(io) {
                 const room = roomStore.getRoom(roomId);
 
                 if (room) {
+                    if (room.isLocked() && !room.isAdmin(userId)) {
+                        // If locked and not admin, don't allow drawing
+                        socket.emit('error', { message: 'Canvas is locked by the admin' });
+                        return;
+                    }
+
                     // Make sure line data is properly structured 
                     // (either an array of points with a color property or a proper line object)
                     let lineData = line;

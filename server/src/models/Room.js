@@ -11,6 +11,25 @@ class Room {
 
         this.messages = []; // Array to store recent messages
         this.messageLimit = 100;
+
+        this._isLocked = false;
+    }
+
+    isAdmin(userId) {
+        // Compare the provided userId with the createdBy property
+        return this.createdBy === userId;
+    }
+
+    toggleLock() {
+        // Toggle the isLocked property
+        this._isLocked = !this._isLocked;
+        
+        // Return the new lock state
+        return this._isLocked;
+    }
+
+    isLocked() {
+        return this._isLocked;
     }
 
     // Add a participant to the room with username
@@ -135,7 +154,8 @@ class Room {
             name: this.name,
             isPrivate: this.isPrivate,
             participantCount: this.participants.size,
-            createdAt: this.createdAt
+            createdAt: this.createdAt,
+            isLocked: this._isLocked
         };
 
         if (includeParticipants) {
@@ -143,7 +163,8 @@ class Room {
             details.participants = Array.from(this.participants).map(([id, username]) => ({
                 id,
                 username,
-                drawingColor: this.getUserDrawingColor(id)
+                drawingColor: this.getUserDrawingColor(id),
+                isAdmin: this.isAdmin(id)
             }));
         }
 

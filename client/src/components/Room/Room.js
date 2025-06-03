@@ -25,6 +25,9 @@ const Room = () => {
     const [drawingUsers, setDrawingUsers] = useState(new Map());
     const [userId, setUserId] = useState("")
 
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isCanvasLocked, setIsCanvasLocked] = useState(false);
+
     useEffect(() => {
         setUserId(Cookies.get("userId"));
         const handleUserDrawingUpdate = (event) => {
@@ -133,6 +136,33 @@ const Room = () => {
             if (data.participants) {
                 setParticipants(data.participants);
             }
+
+            const currentUser = data.participants.find(p => p.id === userId);
+            if (currentUser) {
+                setIsAdmin(currentUser.isAdmin);
+            }
+        });
+
+        socketInstance.on('canvas-lock-status', (data) => {
+            setIsCanvasLocked(data.locked);
+        });
+
+        socketInstance.on('error', (error) => {
+            console.error('Socket error:', error.message);
+            // You could add a toast notification here
+        });
+
+        socketInstance.on('room-updated', (roomData) => {
+            // Update lock status from room data
+            setIsCanvasLocked(roomData.isLocked);
+
+            // Update admin status if available
+            if (roomData.participants) {
+                const currentUser = roomData.participants.find(p => p.id === userId);
+                if (currentUser) {
+                    setIsAdmin(currentUser.isAdmin);
+                }
+            }
         });
 
         socketInstance.on('participant-left', (data) => {
@@ -199,6 +229,12 @@ const Room = () => {
         );
     }
 
+    const toggleCanvasLock = () => {
+        if (isAdmin) {
+            socket.emit('toggle-canvas-lock', { roomId });
+        }
+    };
+
     return (
         <div>
             <UsernameModal
@@ -235,6 +271,11 @@ const Room = () => {
                             </div>
                         </div>
                         <div className="room-actions">
+                            {isAdmin && (
+                                <button onClick={toggleCanvasLock} className="lock-button">
+                                    {isCanvasLocked ? '🔓 Unlock Canvas' : '🔒 Lock Canvas'}
+                                </button>
+                            )}
                             <button onClick={copyRoomLink} className="share-button">
                                 Share Room
                                 {shareTooltip && <span className="tooltip">{shareTooltip}</span>}
@@ -256,6 +297,11 @@ const Room = () => {
                                             {participant.username}
                                             {drawingUsers.has(participant.id) && ' (drawing)'}
                                             {participant.id === userId && ' (you)'}
+                                            {participant.isAdmin &&
+                                                <span>
+                                                    👑
+                                                </span>
+                                            }
                                         </span>
                                     </li>
                                 ))}
@@ -263,7 +309,7 @@ const Room = () => {
                         </div>
                     )}
                     <div className="canvas-container">
-                        <Canvas roomId={roomId} />
+                        <Canvas roomId={roomId} isAdmin={isAdmin} isLocked={isCanvasLocked} />
                     </div>
                     <ChatPanel
                         roomId={roomId}

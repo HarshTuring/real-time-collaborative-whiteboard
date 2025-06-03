@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { initializeSocket, joinRoom } from '../../services/socket';
 import './Canvas.css';
 
-const Canvas = ({ roomId }) => {
+const Canvas = ({ roomId, isAdmin, isLocked }) => {
     const canvasRef = useRef(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [socket, setSocket] = useState(null);
@@ -188,6 +188,10 @@ const Canvas = ({ roomId }) => {
     };
 
     const startDrawing = (e) => {
+        if (isLocked){
+            return;
+        }
+
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
 
