@@ -18,7 +18,6 @@ const generateUserId = (req, res) => {
 
         // Set the ID as a cookie (1 year expiry)
         res.cookie('userId', userId, {
-            httpOnly: true, // For security
             maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
             sameSite: 'lax', // Changed from 'strict' to 'lax' for cross-origin requests
             secure: process.env.NODE_ENV === 'production', // Only use secure in production

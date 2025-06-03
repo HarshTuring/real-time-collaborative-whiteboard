@@ -208,7 +208,7 @@ function initializeSocketIO(io) {
 
                     // Broadcast to all users in the room including color information
                     io.to(roomId).emit('user-drawing-update', {
-                        userId: socket.id,
+                        userId: socket.data.persistentUserId,
                         isDrawing,
                         username,
                         color: color || '#000000'
@@ -282,8 +282,8 @@ function initializeSocketIO(io) {
         });
 
         // When a user leaves a room explicitly
-        socket.on('leave-room', ({ roomId, userId }) => {
-            handleUserLeavingRoom(socket, roomId, userId || socket.id);
+        socket.on('leave-room', ({ roomId }) => {
+            handleUserLeavingRoom(socket, roomId, socket.data.persistentUserId || socket.id);
         });
 
         // Handle room name updates
@@ -339,8 +339,8 @@ function initializeSocketIO(io) {
                     const count = room.removeParticipant(userId);
                     socket.leave(roomId);
 
-                    const systemMessage = room.addSystemMessage(`${username} has left the room`);
-                    io.to(roomId).emit('receive-message', systemMessage);
+                    // const systemMessage = room.addSystemMessage(`${username} has left the room`);
+                    // io.to(roomId).emit('receive-message', systemMessage);
 
                     // Get updated participants list
                     const participants = Array.from(room.participants).map(([id, name]) => ({
