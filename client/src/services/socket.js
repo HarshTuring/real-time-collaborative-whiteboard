@@ -5,7 +5,9 @@ let currentRoom = null; // Track current room to prevent duplicate joins
 
 export const initializeSocket = () => {
     if (!socket) {
-        socket = io('http://localhost:3001');
+        socket = io('http://localhost:3001', {
+            withCredentials: true
+        });
         console.log('Socket initialized');
     }
     return socket;

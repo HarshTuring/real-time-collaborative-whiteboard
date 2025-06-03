@@ -20,12 +20,13 @@ const generateUserId = (req, res) => {
         res.cookie('userId', userId, {
             httpOnly: true, // For security
             maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
-            sameSite: 'strict',
+            sameSite: 'lax', // Changed from 'strict' to 'lax' for cross-origin requests
+            secure: process.env.NODE_ENV === 'production', // Only use secure in production
             path: '/'
         });
 
         // Return the new ID
-        return res.status(201).json({
+        return res.status(200).json({
             success: true,
             userId: userId
         });

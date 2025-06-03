@@ -2,6 +2,26 @@ const roomStore = require('../models/Room');
 
 // Initialize Socket.IO with the HTTP server
 function initializeSocketIO(io) {
+    // Add middleware to log cookies and headers
+    io.use((socket, next) => {
+        if (socket.handshake.headers.cookie) {
+            // Parse the cookie string to get userId
+            const cookies = socket.handshake.headers.cookie.split(';')
+                .map(cookie => cookie.trim().split('='))
+                .reduce((obj, [key, value]) => {
+                    obj[key] = value;
+                    return obj;
+                }, {});
+
+            // Store userId in socket data for later use
+            if (cookies.userId) {
+                socket.data.persistentUserId = cookies.userId;
+                console.log(`User connected with persistent ID: ${cookies.userId}`);
+            }
+        }
+        next();
+    });
+
     // Socket.IO connection handling
     io.on('connection', (socket) => {
         console.log('A user connected:', socket.id);
@@ -75,7 +95,7 @@ function initializeSocketIO(io) {
 
                 // Add user to the room with username
                 socket.join(roomId);
-                const actualUserId = userId || socket.id;
+                const actualUserId = socket.data.persistentUserId || socket.id;
                 room.addParticipant(actualUserId, username || 'Anonymous');
 
                 console.log(`User ${actualUserId} (${username || 'Anonymous'}) joined room ${roomId}`);
