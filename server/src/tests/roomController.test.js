@@ -41,7 +41,10 @@ describe('Room Controller Tests', () => {
         mockReq = {
             body: {},
             params: {},
-            query: {}
+            query: {},
+            cookies: {
+                userId: 'user1'
+            }
         };
 
         mockRes = {
@@ -54,8 +57,7 @@ describe('Room Controller Tests', () => {
         test('should create a room successfully', () => {
             mockReq.body = {
                 name: 'Test Room',
-                isPrivate: false,
-                userId: 'user1'
+                isPrivate: false
             };
 
             roomController.createRoom(mockReq, mockRes);
@@ -74,6 +76,7 @@ describe('Room Controller Tests', () => {
         });
 
         test('should handle creation error', () => {
+            mockReq.cookies = {}; // Remove userId to trigger error
             roomStore.createRoom.mockImplementationOnce(() => {
                 throw new Error('Creation failed');
             });

@@ -120,8 +120,13 @@ class Room {
     }
 
     // Update canvas state
-    updateCanvasState(canvasData) {
+    updateCanvasState(canvasData, userId = null) {
+        // If room is locked, prevent all updates
+        if (this._isLocked) {
+            return false;
+        }
         this.canvasState = canvasData;
+        return true;
     }
 
     // Add a drawing to the canvas state
