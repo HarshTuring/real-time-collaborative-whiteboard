@@ -319,6 +319,7 @@ const Canvas = ({ roomId, isAdmin, isLocked }) => {
                                 style={{ backgroundColor: color }}
                                 onClick={() => handleColorChange(color)}
                                 aria-label={`Select color ${color}`}
+                                disabled={isLocked}
                             />
                         ))}
                     </div>
@@ -329,6 +330,7 @@ const Canvas = ({ roomId, isAdmin, isLocked }) => {
                             onChange={(e) => handleColorChange(e.target.value)}
                             className="color-picker"
                             aria-label="Select custom drawing color"
+                            disabled={isLocked}
                         />
                     </div>
                 </div>
@@ -345,6 +347,7 @@ const Canvas = ({ roomId, isAdmin, isLocked }) => {
                                 onClick={() => handleWidthChange(width)}
                                 aria-label={`Set line width to ${width}px`}
                                 className={currentWidth === width ? 'selected' : ''}
+                                disabled={isLocked}
                             >
                                 <div className="width-preset-inner" style={{ height: `${width}px` }} />
                             </button>
@@ -359,6 +362,7 @@ const Canvas = ({ roomId, isAdmin, isLocked }) => {
                             onChange={(e) => handleWidthChange(parseInt(e.target.value))}
                             className="width-slider"
                             aria-label="Adjust line width"
+                            disabled={isLocked}
                         />
                         <span>
                             {currentWidth}px
@@ -367,23 +371,30 @@ const Canvas = ({ roomId, isAdmin, isLocked }) => {
                 </div>
 
                 {/* Clear Canvas Button */}
-                <button onClick={handleClearCanvas}>
+                <button onClick={handleClearCanvas} disabled={isLocked}>
                     Clear Canvas
                 </button>
             </div>
 
-            <canvas
-                ref={canvasRef}
-                role='canvas'
-                className="whiteboard-canvas"
-                onMouseDown={startDrawing}
-                onMouseMove={draw}
-                onMouseUp={stopDrawing}
-                onMouseOut={stopDrawing}
-                onTouchStart={startDrawing}
-                onTouchMove={draw}
-                onTouchEnd={stopDrawing}
-            />
+            <div className="canvas-wrapper">
+                {isLocked && (
+                    <div className="canvas-locked-message">
+                        Canvas is locked by the admin
+                    </div>
+                )}
+                <canvas
+                    ref={canvasRef}
+                    role='canvas'
+                    className={`whiteboard-canvas ${isLocked ? 'locked' : ''}`}
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseOut={stopDrawing}
+                    onTouchStart={startDrawing}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDrawing}
+                />
+            </div>
         </div>
     );
 };
