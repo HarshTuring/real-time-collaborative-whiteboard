@@ -16,6 +16,22 @@ export const createNewRoom = async (name, isPrivate = false) => {
     }
 };
 
+export const getUserId = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/user/id`, {withCredentials: true});
+
+        if (!response.ok) {
+            throw new Error('Failed to get user ID');
+        }
+
+        const data = await response.json();
+        return data.userId;
+    } catch (error) {
+        console.error('Error getting user ID:', error);
+        throw error;
+    }
+};
+
 export const getPublicRooms = async () => {
     try {
         const response = await axios.get(`${API_URL}/rooms/public`);
