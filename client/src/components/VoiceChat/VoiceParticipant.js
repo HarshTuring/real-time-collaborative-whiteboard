@@ -1,0 +1,36 @@
+import React, { useEffect, useRef } from 'react';
+// import './VoiceParticipant.css';
+
+const VoiceParticipant = ({ username, stream, isMuted, isSelf }) => {
+    const audioRef = useRef(null);
+
+    // Connect audio stream to audio element (for other participants)
+    useEffect(() => {
+        if (audioRef.current && stream && !isSelf) {
+            audioRef.current.srcObject = stream;
+        }
+    }, [stream, isSelf]);
+
+    return (
+        <div>
+            <div className="voice-avatar">
+                {username.charAt(0).toUpperCase()}
+            </div>
+            <div>
+                {username}
+                {isMuted &&
+                    <span>
+                        (Muted)
+
+                    </span>
+                }
+
+            </div>
+            {!isSelf && stream && (
+                <audio ref={audioRef} autoPlay playsInline />
+            )}
+        </div>
+    );
+};
+
+export default VoiceParticipant;

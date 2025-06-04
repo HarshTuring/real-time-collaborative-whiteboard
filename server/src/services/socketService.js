@@ -215,6 +215,31 @@ function initializeSocketIO(io) {
             }
         });
 
+        socket.on('voice-join-request', (roomId, userData) => {
+            // Notify all existing room participants about new voice participant
+            socket.to(roomId).emit('voice-user-joined', userData);
+          });
+          
+          socket.on('voice-offer', ({ target, sender, offer }) => {
+            // Forward WebRTC offer to the target user
+            io.to(target).emit('voice-offer', { sender, offer });
+          });
+          
+          socket.on('voice-answer', ({ target, sender, answer }) => {
+            // Forward WebRTC answer to the target user
+            io.to(target).emit('voice-answer', { sender, answer });
+          });
+          
+          socket.on('voice-ice-candidate', ({ target, sender, candidate }) => {
+            // Forward ICE candidates
+            io.to(target).emit('voice-ice-candidate', { sender, candidate });
+          });
+          
+          socket.on('voice-leave', (roomId, userData) => {
+            // Notify others that a user has left the voice chat
+            socket.to(roomId).emit('voice-user-left', userData);
+          });
+
         // When a user draws on the canvas
         socket.on('draw-line', ({ roomId, line }) => {
             try {
