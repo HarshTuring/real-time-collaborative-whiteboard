@@ -4,17 +4,27 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const roomRoutes = require('./routes/roomRoutes');
+const userRoutes = require("./routes/userRoutes")
 const { initializeSocketIO } = require('./services/socketService');
+const cookieParser = require("cookie-parser")
 
 // Create Express app
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-User-ID']
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // API routes
 app.use('/api/rooms', roomRoutes);
+
+app.use('/api/user', userRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
@@ -28,8 +38,10 @@ const server = http.createServer(app);
 const io = new Server(server, {  
   cors: {
     origin: process.env.CLIENT_URL || "http://localhost:3000",
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  cookie: true
 });
 
 // Setup Socket.IO handlers

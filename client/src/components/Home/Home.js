@@ -13,6 +13,8 @@ const Home = () => {
 
     const navigate = useNavigate();
 
+    // useEffect(()=>{console.log(publicRooms)}, [publicRooms])
+
     // Fetch public rooms on component mount
     useEffect(() => {
         const fetchPublicRooms = async () => {

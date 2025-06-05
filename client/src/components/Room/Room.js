@@ -6,6 +6,7 @@ import { getRoomDetails } from '../../services/api';
 import { joinRoom, leaveRoom } from '../../services/socket';
 import './Room.css';
 import UsernameModal from '../UsernameModal/UsernameModal';
+import Cookies from 'js-cookie';
 
 const Room = () => {
     const { roomId } = useParams();
@@ -22,11 +23,16 @@ const Room = () => {
     const [socket, setSocket] = useState(null);
     const [showParticipantsList, setShowParticipantsList] = useState(true);
     const [drawingUsers, setDrawingUsers] = useState(new Map());
+    const [userId, setUserId] = useState("")
+
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isCanvasLocked, setIsCanvasLocked] = useState(false);
 
     useEffect(() => {
+        setUserId(Cookies.get("userId"));
         const handleUserDrawingUpdate = (event) => {
             const { userId, isDrawing, username, color } = event.detail;
-            
+
             setDrawingUsers(prev => {
                 const newMap = new Map(prev);
                 if (isDrawing) {
@@ -53,20 +59,20 @@ const Room = () => {
         const handleRoomUpdated = (roomData) => {
             setRoom(roomData);
             setParticipantCount(roomData.participantCount);
-            
+
             // Update drawing status from participants data
             if (roomData.participants) {
                 const newDrawingUsers = new Map();
-                
+
                 roomData.participants.forEach(participant => {
                     if (participant.isDrawing) {
-                        newDrawingUsers.set(participant.id, { 
+                        newDrawingUsers.set(participant.id, {
                             username: participant.username,
-                            color: participant.drawingColor || '#000000' 
+                            color: participant.drawingColor || '#000000'
                         });
                     }
                 });
-                
+
                 setDrawingUsers(newDrawingUsers);
             }
         };
@@ -129,6 +135,33 @@ const Room = () => {
             setParticipantCount(data.count);
             if (data.participants) {
                 setParticipants(data.participants);
+            }
+
+            const currentUser = data.participants.find(p => p.id === userId);
+            if (currentUser) {
+                setIsAdmin(currentUser.isAdmin);
+            }
+        });
+
+        socketInstance.on('canvas-lock-status', (data) => {
+            setIsCanvasLocked(data.locked);
+        });
+
+        socketInstance.on('error', (error) => {
+            console.error('Socket error:', error.message);
+            // You could add a toast notification here
+        });
+
+        socketInstance.on('room-updated', (roomData) => {
+            // Update lock status from room data
+            setIsCanvasLocked(roomData.isLocked);
+
+            // Update admin status if available
+            if (roomData.participants) {
+                const currentUser = roomData.participants.find(p => p.id === userId);
+                if (currentUser) {
+                    setIsAdmin(currentUser.isAdmin);
+                }
             }
         });
 
@@ -196,6 +229,12 @@ const Room = () => {
         );
     }
 
+    const toggleCanvasLock = () => {
+        if (isAdmin) {
+            socket.emit('toggle-canvas-lock', { roomId });
+        }
+    };
+
     return (
         <div>
             <UsernameModal
@@ -232,6 +271,11 @@ const Room = () => {
                             </div>
                         </div>
                         <div className="room-actions">
+                            {isAdmin && (
+                                <button onClick={toggleCanvasLock} className="lock-button">
+                                    {isCanvasLocked ? '🔓 Unlock Canvas' : '🔒 Lock Canvas'}
+                                </button>
+                            )}
                             <button onClick={copyRoomLink} className="share-button">
                                 Share Room
                                 {shareTooltip && <span className="tooltip">{shareTooltip}</span>}
@@ -252,7 +296,12 @@ const Room = () => {
                                         }}>
                                             {participant.username}
                                             {drawingUsers.has(participant.id) && ' (drawing)'}
-                                            {participant.id === socket?.id && ' (you)'}
+                                            {participant.id === userId && ' (you)'}
+                                            {participant.isAdmin &&
+                                                <span>
+                                                    👑
+                                                </span>
+                                            }
                                         </span>
                                     </li>
                                 ))}
@@ -260,11 +309,11 @@ const Room = () => {
                         </div>
                     )}
                     <div className="canvas-container">
-                        <Canvas roomId={roomId} />
+                        <Canvas roomId={roomId} isAdmin={isAdmin} isLocked={isCanvasLocked} />
                     </div>
-                    <ChatPanel 
-                        roomId={roomId} 
-                        currentUser={{ id: socket?.id, username: username }} 
+                    <ChatPanel
+                        roomId={roomId}
+                        currentUser={{ id: socket?.id, username: username }}
                     />
                 </>
             )}

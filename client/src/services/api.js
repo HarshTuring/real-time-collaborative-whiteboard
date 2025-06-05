@@ -8,10 +8,27 @@ export const createNewRoom = async (name, isPrivate = false) => {
         const response = await axios.post(`${API_URL}/rooms/create`, {
             name,
             isPrivate
-        });
+        }, { withCredentials: true });
         return response.data;
     } catch (error) {
         console.error('Error creating room:', error);
+        throw error;
+    }
+};
+
+export const getUserId = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/user/id`, {
+            withCredentials: true
+        });
+
+        if (response.status !== 200) {
+            throw new Error('Failed to get user ID');
+        }
+
+        return response.data.userId;
+    } catch (error) {
+        console.error('Error getting user ID:', error);
         throw error;
     }
 };

@@ -150,6 +150,7 @@ describe('Room Management Tests', () => {
                 id: 'test123',
                 name: 'Test Room',
                 isPrivate: false,
+                isLocked: false,
                 participantCount: 1,
                 createdAt: expect.any(Date)
             });
@@ -159,7 +160,12 @@ describe('Room Management Tests', () => {
             room.addParticipant('user2');
             const details = room.getDetails(true);
             
-            expect(details.participants).toEqual(['user2']);
+            expect(details.participants).toEqual([{
+                id: 'user2',
+                username: 'Anonymous',
+                drawingColor: null,
+                isAdmin: false
+            }]);
         });
     });
 }); 

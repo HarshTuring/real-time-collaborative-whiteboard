@@ -5,7 +5,7 @@ const { generateRoomId, generateRoomName } = require('../utils/idGenerator');
 const createRoom = (req, res) => {
     try {
         const { name, isPrivate } = req.body;
-        const createdBy = req.body.userId || 'anonymous';
+        const createdBy = req.cookies.userId || 'anonymous';
 
         // Generate a unique room ID
         const roomId = generateRoomId();

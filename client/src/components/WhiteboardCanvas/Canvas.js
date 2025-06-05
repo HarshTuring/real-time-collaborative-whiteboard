@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { initializeSocket, joinRoom } from '../../services/socket';
 import './Canvas.css';
 
-const Canvas = ({ roomId }) => {
+const Canvas = ({ roomId, isAdmin, isLocked }) => {
     const canvasRef = useRef(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [socket, setSocket] = useState(null);
@@ -188,6 +188,10 @@ const Canvas = ({ roomId }) => {
     };
 
     const startDrawing = (e) => {
+        if (isLocked){
+            return;
+        }
+
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
 
@@ -315,6 +319,7 @@ const Canvas = ({ roomId }) => {
                                 style={{ backgroundColor: color }}
                                 onClick={() => handleColorChange(color)}
                                 aria-label={`Select color ${color}`}
+                                disabled={isLocked}
                             />
                         ))}
                     </div>
@@ -325,6 +330,7 @@ const Canvas = ({ roomId }) => {
                             onChange={(e) => handleColorChange(e.target.value)}
                             className="color-picker"
                             aria-label="Select custom drawing color"
+                            disabled={isLocked}
                         />
                     </div>
                 </div>
@@ -341,6 +347,7 @@ const Canvas = ({ roomId }) => {
                                 onClick={() => handleWidthChange(width)}
                                 aria-label={`Set line width to ${width}px`}
                                 className={currentWidth === width ? 'selected' : ''}
+                                disabled={isLocked}
                             >
                                 <div className="width-preset-inner" style={{ height: `${width}px` }} />
                             </button>
@@ -355,6 +362,7 @@ const Canvas = ({ roomId }) => {
                             onChange={(e) => handleWidthChange(parseInt(e.target.value))}
                             className="width-slider"
                             aria-label="Adjust line width"
+                            disabled={isLocked}
                         />
                         <span>
                             {currentWidth}px
@@ -363,23 +371,30 @@ const Canvas = ({ roomId }) => {
                 </div>
 
                 {/* Clear Canvas Button */}
-                <button onClick={handleClearCanvas}>
+                <button onClick={handleClearCanvas} disabled={isLocked}>
                     Clear Canvas
                 </button>
             </div>
 
-            <canvas
-                ref={canvasRef}
-                role='canvas'
-                className="whiteboard-canvas"
-                onMouseDown={startDrawing}
-                onMouseMove={draw}
-                onMouseUp={stopDrawing}
-                onMouseOut={stopDrawing}
-                onTouchStart={startDrawing}
-                onTouchMove={draw}
-                onTouchEnd={stopDrawing}
-            />
+            <div className="canvas-wrapper">
+                {isLocked && (
+                    <div className="canvas-locked-message">
+                        Canvas is locked by the admin
+                    </div>
+                )}
+                <canvas
+                    ref={canvasRef}
+                    role='canvas'
+                    className={`whiteboard-canvas ${isLocked ? 'locked' : ''}`}
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseOut={stopDrawing}
+                    onTouchStart={startDrawing}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDrawing}
+                />
+            </div>
         </div>
     );
 };

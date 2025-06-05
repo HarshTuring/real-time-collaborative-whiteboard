@@ -55,6 +55,7 @@
     border-radius: 4px;
     cursor: pointer;
 }
+
 .clear-canvas-btn {
     background-color: #f44336;
     color: white;
@@ -75,6 +76,7 @@
 .color-picker-container {
     margin-left: 15px;
 }
+
 .toolbar {
     display: flex;
     align-items: center;
@@ -208,4 +210,45 @@
     flex: 1;
     border: 1px solid #ddd;
     cursor: crosshair;
+}
+
+.canvas-locked-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.whiteboard-canvas.locked {
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.toolbar button:disabled,
+.toolbar input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.color-preset:disabled {
+    transform: none;
+}
+
+.color-preset:disabled:hover {
+    transform: none;
+}
+
+.width-preset:disabled {
+    background-color: #f0f0f0;
+}
+
+.width-slider:disabled {
+    opacity: 0.5;
 }
