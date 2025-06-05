@@ -430,7 +430,6 @@ function initializeSocketIO(io) {
 
             // Check all rooms to see if this user is a participant
             roomStore.getAllRooms().forEach((room, roomId) => {
-                console.log(room, roomId)
                 room.participants.forEach((participant, userId) => {
                     if (participant.socketId == socket.id) {
                         handleUserLeavingRoom(socket, roomId, userId);

@@ -252,6 +252,13 @@ const VoiceChat = ({ socket, roomId, userId, username, participants }) => {
                             isSelf={false}
                         />
                     ))}
+
+                    {/* Waiting message when no other participants */}
+                    {activeVoiceUsers.length === 0 && (
+                        <div className="voice-waiting-message">
+                            Waiting for others to join...
+                        </div>
+                    )}
                 </div>
             )}
         </div>
