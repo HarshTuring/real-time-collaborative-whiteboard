@@ -96,7 +96,7 @@ function initializeSocketIO(io) {
                 // Add user to the room with username
                 socket.join(roomId);
                 const actualUserId = socket.data.persistentUserId || socket.id;
-                room.addParticipant(actualUserId, username || 'Anonymous');
+                room.addParticipant(actualUserId, username || 'Anonymous', socket.id);
 
                 console.log(`User ${actualUserId} (${username || 'Anonymous'}) joined room ${roomId}`);
 
@@ -104,13 +104,6 @@ function initializeSocketIO(io) {
 
                 // Send existing canvas state to the new user
                 socket.emit('canvas-state', room.canvasState);
-
-                // Get participants with usernames
-                const participants = Array.from(room.participants).map(([id, name]) => ({
-                    id,
-                    username: name,
-                    isAdmin: room.isAdmin(id)
-                }));
 
                 const systemMessage = room.addSystemMessage(`${username || 'Anonymous'} has joined the room`);
                 io.to(roomId).emit('receive-message', systemMessage);
@@ -128,7 +121,7 @@ function initializeSocketIO(io) {
                     userId: actualUserId,
                     username: username || 'Anonymous',
                     count: room.getParticipantCount(),
-                    participants: participants,
+                    participants: room.getParticipantsArray(),
                     isAdmin: isAdmin
                 });
 
@@ -143,40 +136,40 @@ function initializeSocketIO(io) {
         socket.on('toggle-canvas-lock', ({ roomId }) => {
             try {
                 const room = roomStore.getRoom(roomId);
-                
+
                 if (!room) {
                     socket.emit('error', { message: 'Room not found' });
                     return;
                 }
-                
+
                 // Check if the user is the admin
                 if (!room.isAdmin(socket.data.persistentUserId)) {
-                    socket.emit('error', { 
-                        message: 'Only the room admin can lock or unlock the canvas' 
+                    socket.emit('error', {
+                        message: 'Only the room admin can lock or unlock the canvas'
                     });
                     return;
                 }
-                
+
                 // Toggle the lock state
                 const isLocked = room.toggleLock();
                 console.log(`Room ${roomId} canvas ${isLocked ? 'locked' : 'unlocked'} by admin ${socket.data.persistentUserId}`);
-                
+
                 // Get admin username
                 const adminUsername = room.participants.get(socket.data.persistentUserId) || 'Admin';
-                
+
                 // Create system message
                 const actionText = `${adminUsername} has ${isLocked ? 'locked' : 'unlocked'} the canvas`;
                 const systemMessage = room.addSystemMessage(actionText);
-                
+
                 // Broadcast lock status to all users in the room
                 io.to(roomId).emit('canvas-lock-status', {
                     locked: isLocked,
                     lockedBy: adminUsername
                 });
-                
+
                 // Broadcast the system message
                 io.to(roomId).emit('receive-message', systemMessage);
-                
+
                 // Update room details
                 io.to(roomId).emit('room-updated', room.getDetails(true));
             } catch (error) {
@@ -192,19 +185,13 @@ function initializeSocketIO(io) {
 
                 if (room && room.participants.has(socket.id)) {
                     // Update the username
-                    room.updateParticipantUsername(socket.id, username);
-
-                    // Get updated participants list
-                    const participants = Array.from(room.participants).map(([id, name]) => ({
-                        id,
-                        username: name
-                    }));
+                    room.updateParticipantUsername(socket.data.persistentUserId, username);
 
                     // Notify all users in the room
                     io.to(roomId).emit('username-updated', {
                         userId: socket.id,
                         username,
-                        participants
+                        participants: room.getParticipantsArray()
                     });
 
                     console.log(`User ${socket.id} updated username to ${username} in room ${roomId}`);
@@ -216,29 +203,68 @@ function initializeSocketIO(io) {
         });
 
         socket.on('voice-join-request', (roomId, userData) => {
-            // Notify all existing room participants about new voice participant
-            socket.to(roomId).emit('voice-user-joined', userData);
-          });
-          
-          socket.on('voice-offer', ({ target, sender, offer }) => {
-            // Forward WebRTC offer to the target user
-            io.to(target).emit('voice-offer', { sender, offer });
-          });
-          
-          socket.on('voice-answer', ({ target, sender, answer }) => {
-            // Forward WebRTC answer to the target user
-            io.to(target).emit('voice-answer', { sender, answer });
-          });
-          
-          socket.on('voice-ice-candidate', ({ target, sender, candidate }) => {
-            // Forward ICE candidates
-            io.to(target).emit('voice-ice-candidate', { sender, candidate });
-          });
-          
-          socket.on('voice-leave', (roomId, userData) => {
+            console.log(`[WebRTC Voice] User ${userData.userId} joining voice in room ${roomId}`);
+
+            const room = roomStore.getRoom(roomId);
+
+            if (room) {
+                // Notify all existing room participants about new voice participant
+                socket.to(roomId).emit('voice-user-joined', userData);
+            }
+        });
+
+        socket.on('voice-offer', ({ target, sender, offer, roomId }) => {
+            console.log(`[WebRTC Voice] Forwarding offer from ${sender} to ${target}`);
+
+            const room = roomStore.getRoom(roomId);
+
+            const targetSocketId = room.getParticipantSocketId(target);
+
+            if (targetSocketId) {
+                console.log(`[WebRTC Voice] Found target socket ID: ${targetSocketId}`);
+
+                io.to(targetSocketId).emit('voice-offer', { sender, offer })
+            } else {
+                console.log(`[WebRTC Voice] Could not find socket for user ${target}`);
+            }
+        });
+
+        socket.on('voice-answer', ({ target, sender, answer, roomId }) => {
+            console.log(`[WebRTC Voice] Forwarding answer from ${sender} to ${target}`);
+
+            const room = roomStore.getRoom(roomId);
+
+            const targetSocketId = room.getParticipantSocketId(target);
+
+            if (targetSocketId) {
+                // Forward to the specific socket
+                io.to(targetSocketId).emit('voice-answer', { sender, answer });
+            } else {
+                console.log(`[WebRTC Voice] Could not find socket for user ${target}`);
+            }
+        });
+
+        socket.on('voice-ice-candidate', ({ target, sender, candidate, roomId }) => {
+            console.log(`[WebRTC Voice] Forwarding ICE candidate from ${sender} to ${target}`);
+
+            const room = roomStore.getRoom(roomId);
+
+            const targetSocketId = room.getParticipantSocketId(target);
+
+            if (targetSocketId) {
+                // Forward to the specific socket
+                io.to(targetSocketId).emit('voice-ice-candidate', { sender, candidate });
+            } else {
+                console.log(`[WebRTC Voice] Could not find socket for user ${target}`);
+            }
+        });
+
+        socket.on('voice-leave', (roomId, userData) => {
+            console.log(`[WebRTC Voice] User ${userData.userId} leaving voice in room ${roomId}`);
+
             // Notify others that a user has left the voice chat
             socket.to(roomId).emit('voice-user-left', userData);
-          });
+        });
 
         // When a user draws on the canvas
         socket.on('draw-line', ({ roomId, line }) => {
@@ -426,19 +452,13 @@ function initializeSocketIO(io) {
                     // const systemMessage = room.addSystemMessage(`${username} has left the room`);
                     // io.to(roomId).emit('receive-message', systemMessage);
 
-                    // Get updated participants list
-                    const participants = Array.from(room.participants).map(([id, name]) => ({
-                        id,
-                        username: name
-                    }));
-
                     console.log(`User ${userId} left room ${roomId}`);
 
                     // Notify remaining users
                     io.to(roomId).emit('participant-left', {
                         userId,
                         count,
-                        participants
+                        participants: room.getParticipantsArray()
                     });
 
                     // If room is empty, consider removing it (optional, based on your requirements)

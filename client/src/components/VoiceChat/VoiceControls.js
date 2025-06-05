@@ -9,17 +9,20 @@ const VoiceControls = ({
     onToggleMute
 }) => {
     return (
-        <div>
+        <div className="voice-controls">
             {!isVoiceActive ? (
-                <button onClick={onStartVoice}>
+                <button className="voice-join-btn" onClick={onStartVoice}>
                     Join Voice Chat
                 </button>
             ) : (
                 <>
-                    <button onClick={onToggleMute}>
+                    <button 
+                        className={`voice-mute-btn ${isMuted ? 'muted' : ''}`} 
+                        onClick={onToggleMute}
+                    >
                         {isMuted ? 'Unmute' : 'Mute'}
                     </button>
-                    <button onClick={onEndVoice}>
+                    <button className="voice-leave-btn" onClick={onEndVoice}>
                         Leave Voice
                     </button>
                 </>

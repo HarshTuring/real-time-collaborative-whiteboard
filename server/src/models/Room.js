@@ -73,7 +73,8 @@ class Room {
         return Array.from(this.participants.entries()).map(([userId, data]) => ({
             id: userId,
             username: data.username,
-            socketId: data.socketId
+            socketId: data.socketId,
+            isAdmin: this.isAdmin(userId)
         }));
     }
 

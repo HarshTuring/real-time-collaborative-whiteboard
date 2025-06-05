@@ -12,19 +12,17 @@ const VoiceParticipant = ({ username, stream, isMuted, isSelf }) => {
     }, [stream, isSelf]);
 
     return (
-        <div>
+        <div className={`voice-participant ${isSelf ? 'self' : ''}`}>
             <div className="voice-avatar">
                 {username.charAt(0).toUpperCase()}
             </div>
-            <div>
+            <div className="voice-username">
                 {username}
-                {isMuted &&
-                    <span>
+                {isMuted && (
+                    <span className="muted-indicator">
                         (Muted)
-
                     </span>
-                }
-
+                )}
             </div>
             {!isSelf && stream && (
                 <audio ref={audioRef} autoPlay playsInline />

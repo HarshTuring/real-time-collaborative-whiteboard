@@ -52,7 +52,8 @@ const VoiceChat = ({ socket, roomId, userId, username, participants }) => {
                 socket.emit('voice-ice-candidate', {
                     target: peerId,
                     sender: userId,
-                    candidate: event.candidate
+                    candidate: event.candidate,
+                    roomId
                 });
             }
         };
@@ -125,7 +126,8 @@ const VoiceChat = ({ socket, roomId, userId, username, participants }) => {
                     socket.emit('voice-offer', {
                         target: userData.userId,
                         sender: userId,
-                        offer
+                        offer,
+                        roomId
                     });
                 } catch (error) {
                     console.error('Error creating offer:', error);
@@ -152,7 +154,8 @@ const VoiceChat = ({ socket, roomId, userId, username, participants }) => {
                 socket.emit('voice-answer', {
                     target: sender,
                     sender: userId,
-                    answer
+                    answer,
+                    roomId
                 });
             } catch (error) {
                 console.error('Error handling offer:', error);
@@ -219,12 +222,9 @@ const VoiceChat = ({ socket, roomId, userId, username, participants }) => {
     }, [socket, roomId, userId, isVoiceActive, audioStream]);
 
     return (
-        <div>
+        <div className="voice-chat-container">
             <div className="voice-header">
-                <h3>
-                    Voice Chat
-
-                </h3>
+                <h3>Voice Chat</h3>
                 <VoiceControls
                     isVoiceActive={isVoiceActive}
                     isMuted={isMuted}
@@ -232,16 +232,15 @@ const VoiceChat = ({ socket, roomId, userId, username, participants }) => {
                     onEndVoice={endVoiceChat}
                     onToggleMute={toggleMute}
                 />
-
             </div>
             {isVoiceActive && (
-                <div>
+                <div className="voice-participants">
                     {/* Current user */}
                     <VoiceParticipant
                         username={`${username} (You)`}
-                    isMuted={isMuted}
-                    isSelf={true}
-/>
+                        isMuted={isMuted}
+                        isSelf={true}
+                    />
 
                     {/* Other participants */}
                     {activeVoiceUsers.map(user => (
@@ -249,9 +248,9 @@ const VoiceChat = ({ socket, roomId, userId, username, participants }) => {
                             key={user.userId}
                             username={user.username}
                             stream={user.stream}
+                            isMuted={false}
                             isSelf={false}
                         />
-
                     ))}
                 </div>
             )}
