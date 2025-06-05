@@ -7,6 +7,7 @@ import { joinRoom, leaveRoom } from '../../services/socket';
 import './Room.css';
 import UsernameModal from '../UsernameModal/UsernameModal';
 import Cookies from 'js-cookie';
+import VoiceChat from '../VoiceChat/VoiceChat';
 
 const Room = () => {
     const { roomId } = useParams();
@@ -311,6 +312,13 @@ const Room = () => {
                     <div className="canvas-container">
                         <Canvas roomId={roomId} isAdmin={isAdmin} isLocked={isCanvasLocked} />
                     </div>
+                    <VoiceChat
+                        socket={socket}
+                        roomId={roomId}
+                        userId={userId}
+                        username={username}
+                        participants={participants}
+                    />
                     <ChatPanel
                         roomId={roomId}
                         currentUser={{ id: socket?.id, username: username }}
