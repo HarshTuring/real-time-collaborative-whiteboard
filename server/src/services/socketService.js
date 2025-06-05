@@ -429,10 +429,14 @@ function initializeSocketIO(io) {
             console.log('A user disconnected:', socket.id);
 
             // Check all rooms to see if this user is a participant
-            roomStore.rooms.forEach((room, roomId) => {
-                if (room.participants.has(socket.id)) {
-                    handleUserLeavingRoom(socket, roomId, socket.id);
-                }
+            roomStore.getAllRooms().forEach((room, roomId) => {
+                console.log(room, roomId)
+                room.participants.forEach((participant, userId) => {
+                    if (participant.socketId == socket.id) {
+                        handleUserLeavingRoom(socket, roomId, userId);
+                    }
+                })
+
             });
         });
 
