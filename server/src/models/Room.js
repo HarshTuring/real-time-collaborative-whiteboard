@@ -241,6 +241,10 @@ class RoomStore {
     roomExists(id) {
         return this.rooms.has(id);
     }
+
+    getAllRooms(){
+        return this.rooms;
+    }
 }
 
 // Create and export the room store singleton
