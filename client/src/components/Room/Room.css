@@ -225,7 +225,8 @@
 }
 
 /* Loading and error states */
-.loading-container, .error-container {
+.loading-container,
+.error-container {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -269,14 +270,66 @@
         align-items: flex-start;
         gap: 12px;
     }
-    
+
     .room-actions {
         width: 100%;
         justify-content: flex-end;
     }
-    
+
     .room-meta {
         flex-wrap: wrap;
         gap: 12px;
     }
+}
+
+.participants-container {
+    margin-top: 10px;
+    overflow-y: auto;
+    max-height: 300px;
+    padding-right: 5px;
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.section-title span {
+    font-weight: normal;
+    font-size: 0.85rem;
+    color: #5f6368;
+}
+
+.room-sidebar-section {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.room-sidebar-section:last-child {
+    border-bottom: none;
+}
+
+/* Custom scrollbar for participants container */
+.participants-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.participants-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.participants-container::-webkit-scrollbar-thumb {
+    background: #d1d1d1;
+    border-radius: 10px;
+}
+
+.participants-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }
