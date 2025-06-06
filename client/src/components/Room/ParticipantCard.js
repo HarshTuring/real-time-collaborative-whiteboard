@@ -12,7 +12,7 @@ const ParticipantCard = ({ participant, isAdmin, isCurrentUser, isDrawing }) => 
     } : {};
 
     return (
-        <div>
+        <div className={`${isCurrentUser ? 'current-user': ''} participant-details participant-card`}>
             <div
                 className={`participant-avatar ${isDrawing ? 'drawing' : ''}`}
                 style={avatarStyle}
@@ -24,7 +24,7 @@ const ParticipantCard = ({ participant, isAdmin, isCurrentUser, isDrawing }) => 
                     {username}
                     {isAdmin &&
 
-                        <span>
+                        <span className='admin-badge'>
                             &nbsp;👑
 
                         </span>
@@ -32,7 +32,7 @@ const ParticipantCard = ({ participant, isAdmin, isCurrentUser, isDrawing }) => 
                 </div>
                 <div>
                     {isCurrentUser &&
-                        <span>
+                        <span className='current-user-badge'>
                             (You)
 
                         </span>
