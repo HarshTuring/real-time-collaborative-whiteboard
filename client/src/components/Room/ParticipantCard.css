@@ -4,10 +4,10 @@
     align-items: center;
     padding: 12px 15px;
     border-radius: 8px;
+    margin: 10px;
     background-color: #f8f9fa;
     transition: all 0.2s ease;
-    width: calc(33.333% - 14px);
-    /* 3 cards per row accounting for gap */
+    /* width: calc(33.333% - 14px); */
 }
 
 .participant-card:hover {
@@ -42,10 +42,10 @@
     animation: pulse 2s infinite;
 }
 
-.participant-details {
+/* .participant-details {
     width: 100%;
     text-align: center;
-}
+} */
 
 .participant-name {
     font-weight: 500;
