@@ -293,8 +293,8 @@ const Room = () => {
                             Participants ({participants.length})
                         </h3>
                         <div className="participants-container"> {participants.map((participant, index) => {
-                            const participantId = participant.id || participant.userId; 
-                            const isAdmin = participant.isAdmin; 
+                            const participantId = participant.id || participant.userId;
+                            const isAdmin = participant.isAdmin;
                             const isCurrentUser = participantId === userId;
                             // Handle drawingUsers properly based on its type
                             let isDrawing = null;
