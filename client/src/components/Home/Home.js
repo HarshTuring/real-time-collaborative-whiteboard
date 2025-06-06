@@ -1,194 +1,179 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getPublicRooms, createNewRoom, checkRoomAccess } from '../../services/api';
 import './Home.css';
+import { createNewRoom, getPublicRooms, checkRoomAccess } from '../../services/api';
+import RoomCard from './RoomCard';
 
 const Home = () => {
     const [publicRooms, setPublicRooms] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [newRoomName, setNewRoomName] = useState('');
     const [isPrivate, setIsPrivate] = useState(false);
     const [joinRoomId, setJoinRoomId] = useState('');
-    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const navigate = useNavigate();
 
-    // useEffect(()=>{console.log(publicRooms)}, [publicRooms])
-
-    // Fetch public rooms on component mount
     useEffect(() => {
-        const fetchPublicRooms = async () => {
-            try {
-                setLoading(true);
-                const data = await getPublicRooms();
-                if (data.success) {
-                    setPublicRooms(data.rooms);
-                }
-                setLoading(false);
-            } catch (err) {
-                setError('Failed to fetch rooms');
-                setLoading(false);
-            }
-        };
-
         fetchPublicRooms();
     }, []);
 
-    // Handler for creating a new room
-    const handleCreateRoom = async (e) => {
-        e.preventDefault();
-
-        if (!newRoomName.trim()) {
-            setError('Please enter a room name');
-            return;
-        }
-
+    const fetchPublicRooms = async () => {
         try {
-            const data = await createNewRoom(newRoomName, isPrivate);
-            if (data.success) {
-                navigate(`/room/${data.room.id}`);
+            setLoading(true);
+            const response = await getPublicRooms();
+            if (response.success) {
+                setPublicRooms(response.rooms);
             } else {
-                setError('Failed to create room');
+                setError('Failed to load public rooms');
             }
         } catch (err) {
-            setError('Failed to create room');
+            setError('Failed to load public rooms');
+            console.error(err);
+        } finally {
+            setLoading(false);
         }
     };
 
-    // Handler for joining a room by ID
-    const handleJoinRoom = async (e) => {
+    const handleCreateRoom = async (e) => {
         e.preventDefault();
-
-        if (!joinRoomId.trim()) {
-            setError('Please enter a room ID');
-            return;
-        }
-
         try {
-            // Check if room exists and is accessible
-            const data = await checkRoomAccess(joinRoomId);
-            if (data.success) {
-                navigate(`/room/${joinRoomId}`);
+            // createNewRoom expects roomName and isPrivate as separate parameters
+            const response = await createNewRoom(newRoomName || undefined, isPrivate);
+            if (response.success) {
+                navigate(`/room/${response.room.id}`);
             } else {
-                setError(data.message || 'Room not found or is private');
+                setError(response.error || 'Failed to create room');
             }
         } catch (err) {
-            setError('Room not found or is private');
+            setError('Failed to create room');
+            console.error(err);
+        }
+    };
+
+    const handleJoinRoom = async (e) => {
+        e.preventDefault();
+        if (!joinRoomId.trim()) return;
+
+        try {
+            const response = await checkRoomAccess(joinRoomId);
+
+            if (response.success && response.exists && response.isAccessible) {
+                navigate(`/room/${joinRoomId}`);
+            } else if (response.success && !response.exists) {
+                setError('Room does not exist');
+            } else {
+                setError('Room is not accessible');
+            }
+        } catch (err) {
+            setError('Failed to join room');
+            console.error(err);
         }
     };
 
     return (
-        <div>
-            <h1>
-                Collaborative Whiteboard
-
-            </h1>
-            {error && <div className="error-message">{error}
-            </div>
-            }
-
-            <div>
-                <div className="home-section">
+        <div className="home-page">
+            <header className="home-header">
+                <h1>
+                    Collaborative Whiteboard
+                </h1>
+                <p>
+                    Create or join a whiteboard room to start collaborating in real-time
+                </p>
+            </header>
+            <div className="action-containers">
+                {/* Create Room Container */}
+                <div className="action-container">
                     <h2>
                         Create a New Room
-
                     </h2>
                     <form onSubmit={handleCreateRoom}>
-                        <div className="form-group">
+                        <div className="input-group">
                             <label>
-                                Room Name
-
+                                Room Name (Optional)
                             </label>
                             <input
                                 type="text"
-                                id="roomName"
+                                id="room-name"
                                 value={newRoomName}
                                 onChange={(e) => setNewRoomName(e.target.value)}
                                 placeholder="Enter room name"
                             />
                         </div>
-                        <div>
-                            <label>
+                        <div className="checkbox-group">
+                            <label className="checkbox-label">
                                 <input
                                     type="checkbox"
                                     checked={isPrivate}
                                     onChange={(e) => setIsPrivate(e.target.checked)}
                                 />
-                                Make room private
+                                <span className="checkbox-text">
+                                    Make room private
+                                </span>
                             </label>
                         </div>
-                        <button>
+                        <button className="btn-primary">
                             Create Room
-
                         </button>
                     </form>
                 </div>
-                <div>
-                    <h2>
-                        Join a Room by ID
 
+                {/* Join Room Container */}
+                <div className="action-container">
+                    <h2>
+                        Join Existing Room
                     </h2>
                     <form onSubmit={handleJoinRoom}>
-                        <div className="form-group">
+                        <div className="input-group">
                             <label>
                                 Room ID
-
                             </label>
                             <input
                                 type="text"
-                                id="roomId"
+                                id="room-id"
                                 value={joinRoomId}
                                 onChange={(e) => setJoinRoomId(e.target.value)}
                                 placeholder="Enter room ID"
+                                required
                             />
                         </div>
-                        <button>
+                        <button className="btn-primary">
                             Join Room
-
                         </button>
                     </form>
                 </div>
             </div>
-            <div>
-                <h2>
-                    Available Public Rooms
 
+            {error &&
+                <div className="error-message">
+                    {error}
+                </div>
+            }
+
+            <section className="public-rooms-section">
+                <h2>
+                    Public Rooms
                 </h2>
                 {loading ? (
-                    <p>
+                    <div className="loading">
                         Loading rooms...
-
-                    </p>
+                    </div>
                 ) : publicRooms.length > 0 ? (
-                    <div className="room-list">
-                        {publicRooms.map((room) => (
-                            <div key={room.id} className="room-card" onClick={() => navigate(`/room/${room.id}`)}>
-                                <h3>
-                                    {room.name}
-
-                                </h3>
-                                <p>
-                                    Room ID: {room.id}
-
-                                </p>
-                                <p>
-                                    Participants: {room.participantCount}
-
-                                </p>
-                                <button>
-                                    Join
-
-                                </button>
-                            </div>
+                    <div className="room-cards">
+                        {publicRooms.map(room => (
+                            <RoomCard
+                                key={room.id}
+                                room={room}
+                                onClick={() => navigate(`/room/${room.id}`)}
+                            />
                         ))}
                     </div>
                 ) : (
-                    <p>
-                        No public rooms available. Create one!
-
+                    <p className="no-rooms">
+                        No public rooms available. Create one to get started!
                     </p>
                 )}
-            </div>
+            </section>
         </div>
     );
 };
