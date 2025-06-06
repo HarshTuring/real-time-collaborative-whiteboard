@@ -58,12 +58,12 @@ const Home = () => {
         try {
             const response = await checkRoomAccess(joinRoomId);
 
-            if (response.success && response.exists && response.isAccessible) {
+            if (response.success) {
+                // If the API call was successful and the room can be accessed, navigate to it
                 navigate(`/room/${joinRoomId}`);
-            } else if (response.success && !response.exists) {
-                setError('Room does not exist');
             } else {
-                setError('Room is not accessible');
+                // If the API call was successful but returned an error
+                setError(response.error || 'Room not accessible');
             }
         } catch (err) {
             setError('Failed to join room');
