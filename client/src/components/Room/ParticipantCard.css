@@ -1,0 +1,127 @@
+.participant-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin: 10px;
+    background-color: #f8f9fa;
+    transition: all 0.2s ease;
+    /* width: calc(33.333% - 14px); */
+}
+
+.participant-card:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.participant-card.current-user {
+    background-color: #e8f0fe;
+    border-left: 3px solid #4285f4;
+}
+
+.participant-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #4285f4;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin: 0 auto 8px;
+    flex-shrink: 0;
+    position: relative;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.participant-avatar.drawing {
+    animation: pulse 2s infinite;
+}
+
+/* .participant-details {
+    width: 100%;
+    text-align: center;
+} */
+
+.participant-name {
+    font-weight: 500;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.current-user-badge,
+.admin-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+    font-weight: normal;
+    text-transform: uppercase;
+}
+
+.current-user-badge {
+    background-color: #e8f0fe;
+    color: #4285f4;
+}
+
+.admin-badge {
+    background-color: #fce8e6;
+    color: #ea4335;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .participant-card {
+        width: calc(50% - 10px);
+        /* 2 cards per row on medium screens */
+    }
+}
+
+@media (max-width: 768px) {
+    .participant-card {
+        width: 100%;
+        /* 1 card per row on small screens */
+        padding: 10px;
+    }
+
+    .participant-avatar {
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+    }
+}
+
+.participant-badges {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.participant-data{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}

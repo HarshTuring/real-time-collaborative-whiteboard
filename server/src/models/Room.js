@@ -5,13 +5,11 @@ class Room {
         this.isPrivate = isPrivate;
         this.createdBy = createdBy;
         this.createdAt = new Date();
-        this.participants = new Map(); // Changed to Map to store participant ID -> username
+        this.participants = new Map(); // Key: userId, Value: { username, socketId }
         this.canvasState = []; // Store the current canvas state
         this.drawingUsers = new Map(); // Store users who are currently drawing
-
         this.messages = []; // Array to store recent messages
         this.messageLimit = 100;
-
         this._isLocked = false;
     }
 
@@ -33,24 +31,56 @@ class Room {
     }
 
     // Add a participant to the room with username
-    addParticipant(participantId, username = 'Anonymous') {
-        this.participants.set(participantId, username);
+    addParticipant(userId, username = 'Anonymous', socketId) {
+        this.participants.set(userId, {
+            username: username || `User ${userId.substring(0, 6)}`,
+            socketId: socketId
+        });
         return this.getParticipantCount();
     }
 
     // Remove a participant from the room
-    removeParticipant(participantId) {
-        this.participants.delete(participantId);
+    removeParticipant(userId) {
+        this.participants.delete(userId);
         return this.getParticipantCount();
     }
 
     // Update a participant's username
-    updateParticipantUsername(participantId, username) {
-        if (this.participants.has(participantId)) {
-            this.participants.set(participantId, username);
+    updateParticipantUsername(userId, username) {
+        const participant = this.participants.get(userId);
+        if (participant) {
+            participant.username = username;
             return true;
         }
         return false;
+    }
+
+    updateParticipantSocketId(userId, socketId) {
+        const participant = this.participants.get(userId);
+        if (participant) {
+            participant.socketId = socketId;
+            return true;
+        }
+        return false;
+    }
+    
+    getParticipantSocketId(userId) {
+        const participant = this.participants.get(userId);
+        return participant ? participant.socketId : null;
+    }
+
+    getParticipantsArray() {
+        return Array.from(this.participants.entries()).map(([userId, data]) => ({
+            id: userId,
+            username: data.username,
+            socketId: data.socketId,
+            isAdmin: this.isAdmin(userId)
+        }));
+    }
+
+    // Check if a user is a participant in this room
+    hasParticipant(userId) {
+        return this.participants.has(userId);
     }
 
     addMessage(message) {
@@ -165,9 +195,9 @@ class Room {
 
         if (includeParticipants) {
             // Convert Map to array of objects with id and username
-            details.participants = Array.from(this.participants).map(([id, username]) => ({
+            details.participants = Array.from(this.participants.entries()).map(([id, data]) => ({
                 id,
-                username,
+                username: data.username,
                 drawingColor: this.getUserDrawingColor(id),
                 isAdmin: this.isAdmin(id)
             }));
@@ -210,6 +240,10 @@ class RoomStore {
     // Check if a room exists
     roomExists(id) {
         return this.rooms.has(id);
+    }
+
+    getAllRooms(){
+        return this.rooms;
     }
 }
 

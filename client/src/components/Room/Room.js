@@ -7,6 +7,8 @@ import { joinRoom, leaveRoom } from '../../services/socket';
 import './Room.css';
 import UsernameModal from '../UsernameModal/UsernameModal';
 import Cookies from 'js-cookie';
+import VoiceChat from '../VoiceChat/VoiceChat';
+import ParticipantCard from './ParticipantCard';
 
 const Room = () => {
     const { roomId } = useParams();
@@ -285,7 +287,47 @@ const Room = () => {
                             </button>
                         </div>
                     </div>
-                    {showParticipantsList && (
+
+                    {showParticipantsList && <>
+                        <h3>
+                            Participants ({participants.length})
+                        </h3>
+                        <div className="participants-container"> {participants.map((participant, index) => {
+                            const participantId = participant.id || participant.userId;
+                            const isAdmin = participant.isAdmin;
+                            const isCurrentUser = participantId === userId;
+                            // Handle drawingUsers properly based on its type
+                            let isDrawing = null;
+                            if (drawingUsers) {
+                                // If drawingUsers is a Map
+                                if (drawingUsers instanceof Map) {
+                                    isDrawing = drawingUsers.get(participantId);
+                                }
+                                // If drawingUsers is an object with entries
+                                else if (typeof drawingUsers === 'object') {
+                                    isDrawing = drawingUsers[participantId];
+                                }
+                                // If drawingUsers is an array
+                                else if (Array.isArray(drawingUsers)) {
+                                    isDrawing = drawingUsers.find(user =>
+                                        user.userId === participantId
+                                    );
+                                }
+                            }
+
+                            return (
+                                <ParticipantCard
+                                    key={participantId || index}
+                                    participant={participant}
+                                    isAdmin={isAdmin}
+                                    isCurrentUser={isCurrentUser}
+                                    isDrawing={isDrawing}
+                                />
+                            );
+                        })}
+                        </div></>
+                    }
+                    {/* {showParticipantsList && (
                         <div className="participants-list-container">
                             <h3>Participants</h3>
                             <ul className="participants-ul">
@@ -307,17 +349,25 @@ const Room = () => {
                                 ))}
                             </ul>
                         </div>
-                    )}
+                    )} */}
                     <div className="canvas-container">
                         <Canvas roomId={roomId} isAdmin={isAdmin} isLocked={isCanvasLocked} />
                     </div>
+                    <VoiceChat
+                        socket={socket}
+                        roomId={roomId}
+                        userId={userId}
+                        username={username}
+                        participants={participants}
+                    />
                     <ChatPanel
                         roomId={roomId}
                         currentUser={{ id: socket?.id, username: username }}
                     />
                 </>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 };
 
