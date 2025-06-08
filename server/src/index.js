@@ -12,9 +12,11 @@ const persistenceService = require('./services/persistenceService');
 // Create Express app
 const app = express();
 
-// Initialize persistence service with periodic sync only
+// Initialize persistence service with periodic sync and cleanup
 persistenceService.initialize({
-    syncIntervalMs: process.env.SYNC_INTERVAL_MS || 5 * 60 * 1000, // 5 minutes default
+    syncIntervalMs: process.env.SYNC_INTERVAL_MS || 3000, // 3 seconds default
+    cleanupIntervalMs: process.env.CLEANUP_INTERVAL_MS || 60 * 60 * 1000, // 1 hour default
+    roomLifetimeHours: process.env.ROOM_LIFETIME_HOURS || 24, // 24 hours default
     mongoUri: process.env.MONGODB_URI
 });
 

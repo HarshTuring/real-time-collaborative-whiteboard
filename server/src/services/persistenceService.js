@@ -5,7 +5,9 @@ const roomStore = require('../models/Room'); // Your existing room store
 class PersistenceService {
   constructor() {
     this.syncInterval = null;
+    this.cleanupInterval = null;
     this.isSyncing = false;
+    this.roomLifetimeHours = 24; // Default: delete rooms after 24 hours
   }
 
   /**
@@ -15,8 +17,13 @@ class PersistenceService {
   initialize(options = {}) {
     const {
       syncIntervalMs = 5 * 60 * 1000, // Default: sync every 5 minutes
+      cleanupIntervalMs = 60 * 60 * 1000, // Default: check for cleanup every hour
+      roomLifetimeHours = 24, // Default: delete rooms after 24 hours
       mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/whiteboard'
     } = options;
+
+    // Store cleanup settings
+    this.roomLifetimeHours = roomLifetimeHours;
 
     // Connect to MongoDB
     mongoose.connect(mongoUri, {
@@ -28,6 +35,9 @@ class PersistenceService {
       
       // Start periodic sync
       this.startPeriodicSync(syncIntervalMs);
+      
+      // Start periodic cleanup
+      this.startPeriodicCleanup(cleanupIntervalMs);
       
       // Load existing rooms from MongoDB on startup
       this.loadRoomsFromDatabase();
@@ -161,6 +171,69 @@ class PersistenceService {
       console.log(`Restored ${restoredCount} rooms from database`);
     } catch (error) {
       console.error('Error loading rooms from database:', error);
+    }
+  }
+
+  /**
+   * Start periodic cleanup of old rooms
+   * @param {number} intervalMs Interval in milliseconds
+   */
+  startPeriodicCleanup(intervalMs) {
+    // Clear any existing interval
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+    }
+
+    // Set up new cleanup interval
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupOldRooms();
+    }, intervalMs);
+
+    console.log(`Room cleanup scheduled every ${intervalMs / 1000} seconds`);
+  }
+
+  /**
+   * Stop periodic cleanup
+   */
+  stopPeriodicCleanup() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+  }
+
+  /**
+   * Clean up rooms that are older than the specified lifetime
+   */
+  async cleanupOldRooms() {
+    try {
+      console.log('Starting room cleanup...');
+      
+      // Calculate the cutoff time
+      const cutoffTime = new Date();
+      cutoffTime.setHours(cutoffTime.getHours() - this.roomLifetimeHours);
+      
+      // Find and delete old rooms from MongoDB
+      const result = await MongoRoom.deleteMany({
+        createdAt: { $lt: cutoffTime }
+      });
+      
+      console.log(`Deleted ${result.deletedCount} old rooms from database`);
+      
+      // Also clean up in-memory rooms
+      const rooms = roomStore.getAllRooms();
+      let memoryCleanupCount = 0;
+      
+      for (const [roomId, room] of rooms.entries()) {
+        if (room.createdAt < cutoffTime) {
+          roomStore.deleteRoom(roomId);
+          memoryCleanupCount++;
+        }
+      }
+      
+      console.log(`Deleted ${memoryCleanupCount} old rooms from memory`);
+    } catch (error) {
+      console.error('Error during room cleanup:', error);
     }
   }
 }
