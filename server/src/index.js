@@ -7,9 +7,16 @@ const roomRoutes = require('./routes/roomRoutes');
 const userRoutes = require("./routes/userRoutes")
 const { initializeSocketIO } = require('./services/socketService');
 const cookieParser = require("cookie-parser")
+const persistenceService = require('./services/persistenceService');
 
 // Create Express app
 const app = express();
+
+// Initialize persistence service with periodic sync only
+persistenceService.initialize({
+    syncIntervalMs: process.env.SYNC_INTERVAL_MS || 5 * 60 * 1000, // 5 minutes default
+    mongoUri: process.env.MONGODB_URI
+});
 
 // Middlewares
 app.use(cors({
