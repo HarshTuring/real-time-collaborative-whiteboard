@@ -7,9 +7,18 @@ const roomRoutes = require('./routes/roomRoutes');
 const userRoutes = require("./routes/userRoutes")
 const { initializeSocketIO } = require('./services/socketService');
 const cookieParser = require("cookie-parser")
+const persistenceService = require('./services/persistenceService');
 
 // Create Express app
 const app = express();
+
+// Initialize persistence service with periodic sync and cleanup
+persistenceService.initialize({
+    syncIntervalMs: process.env.SYNC_INTERVAL_MS || 3000, // 3 seconds default
+    cleanupIntervalMs: process.env.CLEANUP_INTERVAL_MS || 60 * 60 * 1000, // 1 hour default
+    roomLifetimeHours: process.env.ROOM_LIFETIME_HOURS || 24, // 24 hours default
+    mongoUri: process.env.MONGODB_URI
+});
 
 // Middlewares
 app.use(cors({
