@@ -2,14 +2,16 @@
 
 A collaborative real-time whiteboard application built with React, Node.js, and Socket.IO that allows multiple users to draw and interact on a canvas simultaneously. Users can communicate with each other through real-time chat and voice communication features.
 
-## Features
+## Features mapped with Conversations
 
-- Real-time collaborative drawing
-- Color picker and stroke width adjustment
-- User presence indicators
-- Real-time chat functionality
-- Voice communication using WebRTC
-- Room-based collaboration
+- **Conversation 1** - Collaborative Whiteboard Implementation
+- **Conversation 2** - User Identification and Participant Listing
+- **Conversation 3** - Brush Customization (Color & Width)
+- **Conversation 4** - Real-Time Chat using Socket.IO
+- **Conversation 5** - Canvas Locking and User ID Management on Server
+- **Conversation 6** - Real-Time Voice Chat with WebRTC
+- **Conversation 7** - UI Enhancement – Home and Room Pages
+- **Conversation 8** - Deployment with Jenkins & Data Persistence with MongoDB
 
 ## Project Structure
 
