@@ -21,7 +21,7 @@ A collaborative real-time whiteboard application built with React, Node.js, and 
 - **Conversation 7** - UI Enhancement – Home and Room Pages
   - [Code Execution - 1](https://drive.google.com/file/d/1doYu9vueYOmkPhQ6VQvRRc_wcQ7q-_zJ/view?usp=share_link)
   - [Code Execution - 2](https://drive.google.com/file/d/1O5XwbY3k6q0rRerE10h7aqihamdhbwGt/view?usp=share_link)
-- **Conversation 8** - Deployment with Jenkins & Data Persistence with MongoDB
+- **Conversation 8** - Deployment & Data Persistence with MongoDB
   - [Code Execution](https://drive.google.com/file/d/1iAajJv-iCffbV_Y71wXfTWZFYnszIAG6/view?usp=share_link)
 
 ## Project Structure
